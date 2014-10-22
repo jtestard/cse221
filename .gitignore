@@ -5,3 +5,4 @@
 *.bbl
 *.out
 *.blg
+project/profiling/bin
