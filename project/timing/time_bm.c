@@ -15,6 +15,19 @@ void inline GetElapsedTime(uint64_t *times) {
     unsigned cycles_low, cycles_high, cycles_low1, cycles_high1;
     volatile int variable = 0;
 
+    asm volatile (
+                 "CPUID\n\t"
+                 "RDTSC\n\t"
+                 "mov %%edx, %0\n\t"
+                 "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
+                 );
+    asm volatile (
+                 "RDTSCP\n\t"
+                 "mov %%edx, %0\n\t"
+                 "mov %%eax, %1\n\t"
+                 "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
+                 );
+
     for (i = 0; i < ITERATIONS; i++) {
 
         preempt_disable();
