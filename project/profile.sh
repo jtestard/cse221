@@ -1,12 +1,12 @@
-modules=( kernel_thread timing )
+modules=( kernel_thread process )
 for i in "${modules[@]}"
 	do
 	echo "============$i=================="
 	cd $i
 	make clean
-	sudo rmmod kernel_thread
+	sudo rmmod $i
 	make all
-	sudo insmod kernel_thread.ko
+	sudo insmod $i.ko
 	sleep 1
 	timeout 1 tail -f /var/log/syslog
 	cd ..
