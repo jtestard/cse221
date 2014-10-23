@@ -5,4 +5,8 @@
 *.bbl
 *.out
 *.blg
+*.mod.*
+*.symvers
+*.ko
+*.o
 project/profiling/bin
