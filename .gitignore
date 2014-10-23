@@ -13,4 +13,5 @@
 .*.ko.*
 *.order
 .*.swp
+.tmp_versions
 project/profiling/bin

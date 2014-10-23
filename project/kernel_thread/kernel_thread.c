@@ -5,17 +5,43 @@
 #include <linux/preempt.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/kthread.h>  // for threads
+#include <linux/time.h>   // for using jiffies 
+#include <linux/timer.h>
+//#include <linux/string.h>
 
 #define ITERATIONS 10
+
+// Slow fibonacci function
+unsigned int fibonacci (unsigned int n) {
+	if ( n == 0)
+		return 0;
+	else if ( n == 1)
+		return 1;
+	else
+		return fibonacci(n-1) + fibonacci(n-2);
+}
+
+// Function run by the kernel thread
+int thread_fn(void* data) {
+    unsigned int n = 30;
+    printk(KERN_INFO "Kernal Thread Fibonacci n=%u", n);
+    fibonacci(n);
+    printk(KERN_INFO "Kernal Thread Fibonacci done");
+    return 0;
+}
 
 void inline GetElapsedTime(uint64_t *times) {
     unsigned long flags;
     uint64_t start, end;
     int i;
     unsigned cycles_low, cycles_high, cycles_low1, cycles_high1;
-    volatile int variable = 0;
 
     for (i = 0; i < ITERATIONS; i++) {
+	    // Data required for thread creation.
+		static struct task_struct *thread;
+	    char  our_thread[8]="thread";
+	    void * data = NULL;
 
         preempt_disable();
         raw_local_irq_save(flags);
@@ -30,6 +56,12 @@ void inline GetElapsedTime(uint64_t *times) {
         /*********************************************
          * Code to be benchmarked goes here
          *********************************************/
+        thread = kthread_create(thread_fn,data,our_thread);
+        if((thread)) {
+            printk(KERN_INFO "Kernel Thread Creation Successful!");
+            wake_up_process(thread);
+        }
+ 		kthread_stop(thread);
 
         asm volatile (
                      "RDTSCP\n\t"
@@ -54,7 +86,7 @@ static int __init timebm_start(void)
 {
     int i;
     uint64_t *times;
-    uint64_t average_time = 0;
+	uint64_t average_time = 0;
 
     times = kmalloc(ITERATIONS*sizeof(uint64_t*), GFP_KERNEL);
 

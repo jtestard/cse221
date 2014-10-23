@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	obj-m := threads.o
+	obj-m := kernel_thread.o
 else
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
