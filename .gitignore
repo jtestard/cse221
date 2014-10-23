@@ -9,4 +9,8 @@
 *.symvers
 *.ko
 *.o
+.*.o.*
+.*.ko.*
+*.order
+.*.swp
 project/profiling/bin
