@@ -1,9 +1,39 @@
-\subsection{Measurement Overhead}
+\subsection{Measuring Time Methodology}
 
 In order to accurately measure execution time we implemented a timing methodology that reads the 
-hardware time-stamp counter before and after a procedure. We created a kernel module that disables 
+hardware time-stamp counter before and after a procedure (by procedure here we mean lines of C or assembly code we wish to profile, not necessarily a procedure call). We created a kernel module that disables 
 preemption and hard interrupts in order to gain exclusive access to the processor. The RDTSC 
 instruction is called in a block of inline assembly within the kernel module to save the 
 initial time immediately before the procedure is called and again after the procedure exits. The initial time is subtracted from the final time to calculate the number of cycles that have elapsed. This process
-is repeated for a parametized number of repetitions in order to calculate an average elapsed time that 
-compensates for any indeterminism. We were able to measure the overhead of reading time to be 52 cycles. 
+is repeated for a parameterized number of repetitions in order to calculate an average elapsed time that 
+compensates for any indeterminism. The same methodology was used for most measurements.
+
+\subsection{Measuring time overhead}
+
+For computing the overhead of reading time, we did not have to put any procedure between the two reads to the hardware timestamp counters. We were able to measure the overhead of reading time to be on average 52 cycles. 
+
+\subsection{Measuring loop overhead}
+
+One difficulty of using kernel modules is that we are forced to compile our modules with compiler optimizations turned on ~\cite{linux}. As such, we can only profile assembly code or C code that a compiler cannot optimize.
+
+For the looping overhead,  we have to be careful that our looping procedure does not get optimized out either by the compiler or the assembly interpreter. For example, an empty loop would be quickly optimized with a constant propagation compiler pass. As such, we inserted a call to the \texttt{rand()} C function (for pseudo-random numbers) which guarantees the loop actually has to execute our specified number of times in order to obtain a correct result. 
+
+Using our methodology, we measured the average time required to compute 100 independent calls to \texttt{rand()} and 100 calls within a loop. We then subtract the former from the latter. Measurements will be available soon.
+
+\subsection{Procedure call overhead}
+
+Here as well, we had to be careful about compiler optimizations. Again we used the \texttt{rand()} function. The procedures we profile makes a unique call to the rand() function and returns (and never uses any of its arguments). We create eight such procedures (with 0 to 7 arguments).
+
+Using our methodology, we measured the average time required for a single call to the \texttt{rand()} function and each of our eight procedures (and compute the difference). Measurements available soon.
+
+\subsection{System call overhead}
+
+\subsection{Task Creation Time}
+
+In order to compare the execution time of a kernel thread and a process, we setup a (slow) fibonacci function which would be the only thing the kernel thread or process would execute.
+
+We were able to profile kernel threads using our methodology. The procedure between the two hardware counters simply creates a kernel thread which runs the fibonacci function waits for that thread to complete. The average time spent by the thread was 32264 cycles.
+
+While kernel threads can be measured using our methodology, processes cannot be created with a kernel module, since there is no fork or exec call in the linux kernel API. As such for this task, we had to go out of kernel mode and write a user program at the possible cost of loss of precision (however, this gave us the opportunity to shut down compiler optimizations!). This time, we use a linux \texttt{clone()} system call and had the child process execute the fibonacci function. Measurements available soon.
+
+\subsection{Context Switch Time}
