@@ -10,6 +10,7 @@
 #include <linux/timer.h>
 
 #define ITERATIONS 10
+#define STACK_SIZE 4096
 
 // Slow fibonacci function
 unsigned int fibonacci (unsigned int n) {
@@ -22,9 +23,11 @@ unsigned int fibonacci (unsigned int n) {
 }
 
 // Function run by the kernel thread
-int thread_fn(void* data) {
+int process_fn(void* data) {
     unsigned int n = 30;
+    printk(KERN_INFO "Kernal Thread Fibonacci n=%u", n);
     fibonacci(n);
+    printk(KERN_INFO "Kernal Thread Fibonacci done");
     return 0;
 }
 
@@ -36,10 +39,9 @@ void inline GetElapsedTime(uint64_t *times) {
 
     for (i = 0; i < ITERATIONS; i++) {
 	    // Data required for thread creation.
-		static struct task_struct *thread;
-	    char  our_thread[8]="thread";
-	    void * data = NULL;
-
+	    void * child_stack = kmalloc(STACK_SIZE,__GFP_NOWARN);
+		
+		//CLONE_NEWPID
         preempt_disable();
         raw_local_irq_save(flags);
     
@@ -53,12 +55,7 @@ void inline GetElapsedTime(uint64_t *times) {
         /*********************************************
          * Code to be benchmarked goes here
          *********************************************/
-        thread = kthread_create(thread_fn,data,our_thread);
-        if((thread)) {
-            printk(KERN_INFO "Kernel Thread Creation Successful!");
-            wake_up_process(thread);
-        }
- 		kthread_stop(thread);
+		fork (&process_fn, child_stack+STACK_SIZE, CLONE_NEWPID, NULL);
 
         asm volatile (
                      "RDTSCP\n\t"
