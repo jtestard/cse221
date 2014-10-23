@@ -1,31 +1,25 @@
-We are using an Apple MacBookPro (mid-2009 model) machine running Mac OS 10.8.5. The specs of the machine are described below. Some of the following information could be directly found through the system using the \texttt{system\_profiler} command. Some of this information could only be derived from online documentation. In all cases, the origin of the derivation of the characteristics is shown.
+We are using a Lenovo Thinkpad X220 running the Ubuntu 12.04 operating system with the 3.5.0-54 kernel. The specs of the machine are described below. Some of the following information could be directly found through the system by reading /proc/cpuinfo. Some of this information could only be derived from online documentation. In all cases, the origin of the derivation of the characteristics is shown.
 
 \subsection{Processor}
-The machine's processor description was obtained from the Apple ~\cite{appleProc} and Intel ~\cite{intelProc} websites. 
-The machine possesses a single Intel Wolfdale-3M processor (model E7300) dual core processor. According to Wikipedia ~\cite{WikiWolfdale}, the Wolfdale-3M processor uses the Intel Penryn ~\cite{WikiPenryn} micro-architecture. 
+The machine possesses a Intel(R) Core(TM) i5-2520M processor. 
 
 \begin{itemize}
-\item{Each core has a clock frequency of 2.66 GHz \footlabel{sysprof}{This information was derived from the system\_profiler.}.}
-\item{The L1 cache size is 64kB per core \footlabel{penryn}{This information was derived from the Penryn documentation.}.}
-\item{The L2 cache size is 3MB \footref{sysprof}.}
-\item{The L3 cache size is 8MB \footref{penryn}}
-\item{The processor uses a 64 bit instruction set \footref{sysprof}.}
+    \item{Each core has a clock frequency of 2.5 GHz}
+    \item{The core has a separate data and instruction L1 cache. Each cache is 2 x 32 KB.}
+\item{The L2 cache size is 2 x 256 KB.}
+\item{The L3 cache size is 3 MB.}
+\item{The processor uses a 64 bit instruction set.}
 \end{itemize}
 
 \subsection{Buses}
 
-The machine uses the Intel terminology for buses. Data transfer between the CPU to the memory is done through a 1066 Mhz  front side bus (FSB) \footref{sysprof}. The machine uses four PCI Express 2.0 buses for I/O purposes. Two of them are 16 lanes, two of them are 4 lanes (each lane has a throughput of 250-500 MB/s) ~\cite{AppleBus}.
+The machine uses the Intel terminology for buses. Data transfer between the CPU to the memory is done through a 5 GT/s front side bus (FSB). The machine uses PCI Express 2.0 buses for I/O purposes.
 
 \subsection{Memory}
 
-The machine possesses two DDR3 2GB memory banks. Both banks use the memory bus mentioned earlier (FSB). The memory banks support but do not use error correcting codes (ECC) \footref{sysprof}. 
+The machine possesses two DDR3 4GB memory banks. Both banks use the memory bus mentioned earlier (FSB). The memory banks support but do not use error correcting codes (ECC). 
 
 \subsection{Storage}
 
-The machine uses a Hitachi HSTS545032B9SA02 drive ~\cite{StarMicro}. It is a rotational hard drive which uses the SATA protocol. It uses a journaled HFS+ file system \footref{sysprof}. Its rotational delay is 11ms and has a seek time of 12 ms (5400RPM). Finally, its controller cache size is 8MB \footlabel{hitachi}{This information was derived from the StarMicro documentation.}. Total disk size is 320GB.
+The machine uses a 256 GB Samsung 830 Solid State Drive. 
 
-\subsection{I/O Network}
-The machine possesses two USB device ports, one firewire port, one Bluetooth port, one wifi port, one 1000 Base T ethernet port. The ethernet bandwidth (network card) is 1GB/s. All of those ports use the aforementioned PCI buses to communicate with the memory \footref{sysprof}.
-
-\subsection{Operating System}
-The machine uses the Mac OS X operating system, version 10.8.5 (12F45). It uses the Darwin 12.5.0 kernel and uses secure virtual memory (swap files are encrypted before being written to disk)\footref{sysprof}.

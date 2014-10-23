@@ -1,0 +1,9 @@
+\subsection{Measurement Overhead}
+
+In order to accurately measure execution time we implemented a timing methodology that reads the 
+hardware time-stamp counter before and after a procedure. We created a kernel module that disables 
+preemption and hard interrupts in order to gain exclusive access to the processor. The RDTSC 
+instruction is called in a block of inline assembly within the kernel module to save the 
+initial time immediately before the procedure is called and again after the procedure exits. The initial time is subtracted from the final time to calculate the number of cycles that have elapsed. This process
+is repeated for a parametized number of repetitions in order to calculate an average elapsed time that 
+compensates for any indeterminism. We were able to measure the overhead of reading time to be 52 cycles. 
