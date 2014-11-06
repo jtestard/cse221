@@ -1,4 +1,3 @@
-#include <linux/hardirq.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -6,9 +5,8 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/kthread.h>  // for threads
-#include <linux/time.h>   // for using jiffies 
+#include <linux/time.h> 
 #include <linux/timer.h>
-
 #define ITERATIONS 10
 
 // Slow fibonacci function
@@ -29,10 +27,8 @@ int thread_fn(void* data) {
 }
 
 void inline GetElapsedTime(uint64_t *times) {
-    unsigned long flags;
-    uint64_t start, end;
     int i;
-    unsigned cycles_low, cycles_high, cycles_low1, cycles_high1;
+	struct timespec ts_start,ts_end,test_of_time;
 
     for (i = 0; i < ITERATIONS; i++) {
 	    // Data required for thread creation.
@@ -40,19 +36,10 @@ void inline GetElapsedTime(uint64_t *times) {
 	    char  our_thread[8]="thread";
 	    void * data = NULL;
 
-        preempt_disable();
-        raw_local_irq_save(flags);
-    
-        asm volatile (
-                     "CPUID\n\t"
-                     "RDTSC\n\t"
-                     "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
-                     );
+		//Not disabling preemption in order to make meaningful comparison.
+		//Read time
+		getnstimeofday(&ts_start);
 
-        /*********************************************
-         * Code to be benchmarked goes here
-         *********************************************/
         thread = kthread_create(thread_fn,data,our_thread);
         if((thread)) {
             printk(KERN_INFO "Kernel Thread Creation Successful!");
@@ -60,20 +47,12 @@ void inline GetElapsedTime(uint64_t *times) {
         }
  		kthread_stop(thread);
 
-        asm volatile (
-                     "RDTSCP\n\t"
-                     "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t"
-                     "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
-                     );
+		//Read time
+		getnstimeofday(&ts_end);
+        
+		test_of_time = timespec_sub(ts_end,ts_start);
 
-        raw_local_irq_restore(flags);
-        preempt_enable();
-
-        start = (((uint64_t) cycles_high << 32) | cycles_low);
-        end = (((uint64_t) cycles_high1 << 32) | cycles_low1);
-
-        times[i] = end - start;
+        times[i] = test_of_time.tv_nsec;
     }
     
     return;
@@ -99,7 +78,6 @@ static int __init timebm_start(void)
     for (i = 0; i < ITERATIONS; i++) {
         average_time += times[i];
         printk(KERN_CRIT "The elapsed time is: %llu\n", times[i]);
-
     }
 
     average_time /= ITERATIONS;
