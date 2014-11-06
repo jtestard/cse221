@@ -8,7 +8,9 @@ sudo cgcreate -g memory:limited
 sudo cgset -r memory.limit_in_bytes=75M limited
 
 echo ""
-echo ""
+echo "
+The memory of processes in cgroup \"limited\" is now constrained to 75MB.
+"
 echo "
 Now you can exec your files with the restriction using a command such as 
 cgexec -g memory:limited <limited_process_file_name>
