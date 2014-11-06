@@ -39,7 +39,7 @@ Writing is done per chunks of one megabyte.
 @returns
 	The number of megabytes actually allocated.
 */
-unsigned int write_megabyte(char **mallocs, unsigned int numMegaBytes, FILE* file);
+unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file);
 
 
 /*
@@ -58,7 +58,7 @@ Reading is done per chunks of one kilobyte.
 @returns
 	The number of megabytes actually read.
 */
-unsigned int read_kilobytes(char **mallocs, unsigned int numKiloBytes, FILE* file, bool random);
+unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE* file, bool random);
 
 const unsigned int MEGABYTE = 1048576;
 const unsigned int KILOBYTE = 1024;

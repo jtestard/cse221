@@ -12,8 +12,8 @@ void experimentOne() {
 	FILE *file;
 	char** mallocs;
 	bool random = false;
-	unsigned int write_size = 4;
-	unsigned int read_sample_size = 4;
+	unsigned int write_size = 25;
+	unsigned int read_sample_size = 15;
 	unsigned int read_sizes[read_sample_size];
 	read_sizes[0] = 1;
 	for (unsigned int i = 1; i < read_sample_size; i++) {
@@ -26,13 +26,13 @@ void experimentOne() {
 		exit(1);
 	}
 	printf("Starting experiment one...\n");
-	unsigned int written = write_megabyte(mallocs, write_size, file);
+	unsigned int written = write_megabyte(&mallocs, write_size, file);
 	if (written!=write_size) {
 		printf("Error! Less than %dMB written, aborting experiment", written);
 		exit(1);
 	}	
 	for (unsigned int i=0; i < read_sample_size; i++) {
-		read_kilobytes(mallocs, read_sizes[i], file, random);
+		read_kilobytes(&mallocs, read_sizes[i], file, random);
 	}
 	
 	//Free the memory

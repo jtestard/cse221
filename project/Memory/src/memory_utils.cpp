@@ -49,7 +49,7 @@ void process_mem_usage(double& vm_usage, double& resident_set, long& page_size_k
 	resident_set = rss * page_size_kb;
 }
 
-unsigned int write_megabyte(char **mallocs, unsigned int numMegaBytes, FILE* file) {
+unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file) {
 	using std::cout;
 	using std::endl;
 	double vm, rss;
@@ -58,7 +58,7 @@ unsigned int write_megabyte(char **mallocs, unsigned int numMegaBytes, FILE* fil
 	long unsigned time_taken;
 	fprintf(file, "writing megabytes...\n"); //Added for debugging. TODO: remove
 
-	mallocs = (char**) malloc(sizeof(char*) * numMegaBytes);
+	*mallocs_ptr = (char**) malloc(sizeof(char*) * numMegaBytes);
 	unsigned int i,j,reached = 0;
 	for (i = 0; i < numMegaBytes; i++) {
 		void* p = malloc(sizeof(char) * MEGABYTE);
@@ -69,15 +69,15 @@ unsigned int write_megabyte(char **mallocs, unsigned int numMegaBytes, FILE* fil
 			reached = i;
 			break;
 		}
-		mallocs[i] = (char*) p;
+		(*mallocs_ptr)[i] = (char*) p;
 
 		//Now fill in the malloc with some data, which forces the OS
 		//to have this data in memory.
 		clock_gettime(CLOCK_REALTIME,&ts_start);	
 		
-		strcpy(mallocs[i],ONE_KB_STRING);
+		strcpy((*mallocs_ptr)[i],ONE_KB_STRING);
 		for (j=0; j<ALLOC_SIZE-1; j++)
-			strcat(mallocs[i],ONE_KB_STRING);
+			strcat((*mallocs_ptr)[i],ONE_KB_STRING);
 		
 		clock_gettime(CLOCK_REALTIME,&ts_end);	
 		test_of_time = diff(ts_start,ts_end);
@@ -96,7 +96,7 @@ unsigned int write_megabyte(char **mallocs, unsigned int numMegaBytes, FILE* fil
 	return reached;
 }
 
-unsigned int read_kilobytes(char **mallocs, unsigned int numKiloBytes, FILE* file, bool random) {
+unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE* file, bool random) {
 	using std::cout;
 	using std::endl;
 	double vm, rss;
@@ -104,7 +104,9 @@ unsigned int read_kilobytes(char **mallocs, unsigned int numKiloBytes, FILE* fil
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
 	char* retrieve;
-	unsigned int i;
+	unsigned int i,j;
+	unsigned int mb_offset = numKiloBytes / KILOBYTE; //Number of megabytes requested.
+	unsigned int kb_offset = numKiloBytes % KILOBYTE; //Should always be 0 in our case, but it could be non zero in other cases.
 	
 	void* p = malloc(KILOBYTE * sizeof(char));
 	if (!p) {
@@ -115,8 +117,10 @@ unsigned int read_kilobytes(char **mallocs, unsigned int numKiloBytes, FILE* fil
 	
 	clock_gettime(CLOCK_REALTIME,&ts_start);	
 	
-	for (i = 0; i < numKiloBytes; i++) {
-		memcpy(retrieve,mallocs[i],KILOBYTE);
+	for (i = 0; i < mb_offset; i++) {
+		for (j = 0; j < kb_offset; j++) {
+			memcpy(retrieve,(*mallocs_ptr)[i]+j,KILOBYTE);
+		}
 	}
 	
 	clock_gettime(CLOCK_REALTIME,&ts_end);	
