@@ -13,5 +13,7 @@
 .*.ko.*
 *.order
 .*.swp
+*.csv
 .tmp_versions
 project/profiling/bin
+project/Memory/bin/*
