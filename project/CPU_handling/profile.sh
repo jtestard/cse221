@@ -9,7 +9,7 @@ for i in "${modules[@]}"
 	make all
 	sudo insmod $i.ko
 	sleep 1
-	timeout 1 tail -f /var/log/syslog >> ../measurements/$i.log
+	timeout 1 tail -f /var/log/syslog > ../measurements/$i.log
 	make clean
 	sudo rmmod $i
 	cd ..
@@ -23,7 +23,7 @@ for i in "${modules[@]}"
 	echo "============$i=================="
 	cd $i
 	make all
-	$i >> ../measurements/$i.log
+	./$i > ../measurements/$i.log
 	make clean
 	cd ..
 	echo "==============$i END============"
