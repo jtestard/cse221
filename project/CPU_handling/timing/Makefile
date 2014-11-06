@@ -1,8 +1,10 @@
-obj-m = time_bm.o
-KVERSION = $(shell uname -r)
+all: timing
 
-all:
-	make -C /lib/modules/$(KVERSION)/build M=$(PWD) modules
+timing: timing.o
+	gcc -o timing timing.o
+
+timing.o: timing.c
+	gcc -O0 -c timing.c
 
 clean:
-	make -C /lib/modules/$(KVERSION)/build M=$(PWD) clean
+	rm timing timing.o
