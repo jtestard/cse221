@@ -1,16 +1,14 @@
-#include <linux/hardirq.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/preempt.h>
-#include <linux/sched.h>
-#include <linux/slab.h>
-#include <linux/kthread.h>  // for threads
-#include <linux/time.h>   // for using jiffies 
-#include <linux/timer.h>
+#include <time.h>
+#include <sched.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #define ITERATIONS 10
-#define STACK_SIZE 4096
+#define STACK_SIZE (1024 * 1024)
+
+#define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE);} while (0)
+struct timespec diff(struct timespec start, struct timespec end);
 
 // Slow fibonacci function
 unsigned int fibonacci (unsigned int n) {
@@ -25,91 +23,75 @@ unsigned int fibonacci (unsigned int n) {
 // Function run by the kernel thread
 int process_fn(void* data) {
     unsigned int n = 30;
-    printk(KERN_INFO "Kernal Thread Fibonacci n=%u", n);
     fibonacci(n);
-    printk(KERN_INFO "Kernal Thread Fibonacci done");
     return 0;
 }
 
-void inline GetElapsedTime(uint64_t *times) {
-    unsigned long flags;
-    uint64_t start, end;
+void inline GetElapsedTime(unsigned long  *times) {
     int i;
-    unsigned cycles_low, cycles_high, cycles_low1, cycles_high1;
+	struct timespec ts_start,ts_end,test_of_time;
 
     for (i = 0; i < ITERATIONS; i++) {
 	    // Data required for thread creation.
-	    void * child_stack = kmalloc(STACK_SIZE,__GFP_NOWARN);
-		
-		//CLONE_NEWPID
-        preempt_disable();
-        raw_local_irq_save(flags);
-    
-        asm volatile (
-                     "CPUID\n\t"
-                     "RDTSC\n\t"
-                     "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
-                     );
+		pid_t pid;
 
-        /*********************************************
-         * Code to be benchmarked goes here
-         *********************************************/
-		fork (&process_fn, child_stack+STACK_SIZE, CLONE_NEWPID, NULL);
+		//Not disabling preemption in order to make meaningful comparison.
+		//Read time
+		clock_gettime(CLOCK_REALTIME,&ts_start);	
 
-        asm volatile (
-                     "RDTSCP\n\t"
-                     "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t"
-                     "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
-                     );
+		if ((pid = fork()) == 0) {
+			process_fn((void *) NULL);
+			exit(0);
+		}
 
-        raw_local_irq_restore(flags);
-        preempt_enable();
+		//Read time
+		clock_gettime(CLOCK_REALTIME,&ts_end);	
+        
+		test_of_time = diff(ts_start,ts_end);
 
-        start = (((uint64_t) cycles_high << 32) | cycles_low);
-        end = (((uint64_t) cycles_high1 << 32) | cycles_low1);
-
-        times[i] = end - start;
+        times[i] = test_of_time.tv_nsec;
     }
     
     return;
 }
 
-static int __init timebm_start(void)
-{
-    int i;
-    uint64_t *times;
-	uint64_t average_time = 0;
+int main( int argc, const char* argv[] ){
 
-    times = kmalloc(ITERATIONS*sizeof(uint64_t*), GFP_KERNEL);
+    int i;
+    unsigned long *times;
+	unsigned long average_time = 0;
+
+    times = malloc(ITERATIONS*sizeof(unsigned long*));
 
     if (!times) {
-        printk(KERN_ERR "Failed to allocate times memory\n");
+        printf("Failed to allocate times memory\n");
         return 0;
     }
 
-    printk(KERN_CRIT "Loading Timing Benchmark module...\n");
-
+	//Launch the timing
     GetElapsedTime(times);
 
     for (i = 0; i < ITERATIONS; i++) {
         average_time += times[i];
-        printk(KERN_CRIT "The elapsed time is: %llu\n", times[i]);
-
+        printf("The elapsed time is: %lu\n", times[i]);
     }
 
     average_time /= ITERATIONS;
     
-    printk(KERN_CRIT "The average elapsed time is: %llu\n", average_time);
+    printf("The average elapsed time is: %lu\n", average_time);
     
     return 0;
 }
 
-static void __exit timebm_end(void)
+struct timespec diff(struct timespec start, struct timespec end)
 {
-    printk(KERN_CRIT "Time Benchmark module removed\n");
+	struct timespec temp;
+	if ((end.tv_nsec-start.tv_nsec)<0) {
+		temp.tv_sec = end.tv_sec-start.tv_sec-1;
+		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+	} else {
+		temp.tv_sec = end.tv_sec-start.tv_sec;
+		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+	}
+	return temp;
 }
-
-module_init(timebm_start);
-module_exit(timebm_end);

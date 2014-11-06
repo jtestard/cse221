@@ -1,4 +1,6 @@
 # This script should be use to profile kernel modules.
+
+# Kernel module section
 modules=( kernel_thread )
 for i in "${modules[@]}"
 	do
@@ -7,9 +9,23 @@ for i in "${modules[@]}"
 	make all
 	sudo insmod $i.ko
 	sleep 1
-	timeout 1 tail -f /var/log/syslog
+	timeout 1 tail -f /var/log/syslog >> ../measurements/$i.log
 	make clean
 	sudo rmmod $i
 	cd ..
 	echo "==============$i END============"
 done
+
+# User process section
+modules=( process )
+for i in "${modules[@]}"
+	do
+	echo "============$i=================="
+	cd $i
+	make all
+	$i >> ../measurements/$i.log
+	make clean
+	cd ..
+	echo "==============$i END============"
+done
+

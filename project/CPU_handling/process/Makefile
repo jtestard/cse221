@@ -1,15 +1,10 @@
-ifneq ($(KERNELRELEASE),)
-	obj-m := process.o
-else
+all: process
 
-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+process: process.o
+	gcc -o process process.o
 
-PWD := $(shell pwd)
-
-all:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+process.o: process.c
+	gcc -c process.c
 
 clean:
-	make -C $(KERNELDIR)  M=$(PWD) clean
-
-endif
+	rm process process.o
