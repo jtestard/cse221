@@ -138,3 +138,27 @@ unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE
 	free(retrieve);
 	return numKiloBytes;
 }
+
+void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	char* retrieve[1024];
+	unsigned int i;
+	for (i = 0 ; i < numMegaBytes; i++) {
+		clock_gettime(CLOCK_REALTIME,&ts_start);	
+		memcpy(retrieve,(*mallocs_ptr)[i],1024); // Copy part of the string at mallocs[i]
+	    clock_gettime(CLOCK_REALTIME,&ts_end);	
+	    test_of_time = diff(ts_start,ts_end);
+	    time_taken = test_of_time.tv_nsec;
+	    
+		//Collect data
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "Read : " << numMegaBytes << "kB; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", numMegaBytes,(long)vm,(long)rss, time_taken);
+	}
+}

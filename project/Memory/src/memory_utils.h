@@ -60,6 +60,12 @@ Reading is done per chunks of one kilobyte.
 */
 unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE* file, bool random);
 
+/*
+Reads all the memory in the mallocs array. If the array is bigger than 
+memory size, then pagefaults will occur.
+*/
+void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file);
+
 const unsigned int MEGABYTE = 1048576;
 const unsigned int KILOBYTE = 1024;
 const unsigned int ALLOC_SIZE = MEGABYTE/1024;
