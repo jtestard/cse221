@@ -10,36 +10,26 @@ void experimentOne() {
 	using std::cout;
 	using std::endl;
 	FILE *file;
-	char** mallocs;
-	unsigned int write_size = 150;
-	unsigned int read_sample_size = 17;
+	node* root;
+	unsigned int list_size = 1000;
+	unsigned int read_sample_size = 15;
+	char filename[] = "experimentOne.csv";
 	unsigned int read_sizes[read_sample_size];
 	read_sizes[0] = 1;
 	for (unsigned int i = 1; i < read_sample_size; i++) {
-		read_sizes[i] = read_sizes[i-1] << 1;
+	        read_sizes[i] = read_sizes[i-1] << 1;
 	}
-	char filename[] = "experimentOne.csv";
 	file = fopen(filename,"w");
 	if (!file) {
 		printf("There was a problem trying to open file : %s... experiment aborted.\n", filename);
 		exit(1);
 	}
 	printf("Starting experiment one...\n");
-	unsigned int written = write_megabyte(&mallocs, write_size, file);
-	if (written!=write_size) {
-		printf("Error! Less than %dMB written, aborting experiment", written);
-		exit(1);
-	}	
-	for (unsigned int i=0; i < read_sample_size; i++) {
-		read_kilobytes(&mallocs, read_sizes[i], file, false);
+	make_list(&root, list_size, file);
+	for (unsigned int i = 0; i < read_sample_size; i++) {
+		read_list_wrap(&root, read_sizes[i], file);
 	}
-	
-	//Free the memory
-	printf("Now freeing...\n");
-	for (unsigned int i = 0; i < write_size; i++) {
-		free(mallocs[i]);
-	}
-	free(mallocs);
+	free_list(&root);
 	fclose(file);
 }
 
@@ -53,7 +43,7 @@ void experimentThree() {
 	FILE *file;
 	char** mallocs;
 	unsigned int write_size = 150;
-	char filename[] = "experimentTree.csv";
+	char filename[] = "experimentThree.csv";
 	file = fopen(filename,"w");
 	if (!file) {
 		printf("There was a problem trying to open file : %s... experiment aborted.\n", filename);
@@ -79,8 +69,7 @@ void experimentThree() {
 
 
 int main(int argc, char **argv, char **envp) {
-	//Experiment 1
-	//experimentOne();
+	experimentOne();
 	experimentThree();
 	return 0;
 }

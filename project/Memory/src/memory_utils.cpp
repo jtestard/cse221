@@ -1,5 +1,6 @@
 #include "memory_utils.h"
 
+
 struct timespec diff(struct timespec start, struct timespec end)
 {
 	struct timespec temp;
@@ -54,9 +55,9 @@ unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE
 	using std::endl;
 	double vm, rss;
 	long page_size;
+	bool profile = true;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
-	fprintf(file, "writing megabytes...\n"); //Added for debugging. TODO: remove
 
 	*mallocs_ptr = (char**) malloc(sizeof(char*) * numMegaBytes);
 	unsigned int i,j,reached = 0;
@@ -84,17 +85,135 @@ unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE
 		time_taken = test_of_time.tv_nsec;
 		
 		//Collect data
-		process_mem_usage(vm, rss, page_size);
-		cout << "Allocated : " << i+1 << "MB; VM: " << vm << "kB; RAM: " << rss << "kB;";
-		cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
-		fprintf(file,"%i %li %li %lu\n",i+1,(long)vm,(long)rss, time_taken);
+		if (profile) {
+		    process_mem_usage(vm, rss, page_size);
+		    cout << "Allocated : " << i+1 << "MB; VM: " << vm << "kB; RAM: " << rss << "kB;";
+		    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+		    fprintf(file,"%i %li %li %lu\n",i+1,(long)vm,(long)rss, time_taken);
+		} else {
+			cout << ".";
+		}
 	}
+	cout << endl;
 	if (!reached) {
 		printf("Memory successfully allocated!");
 		reached = numMegaBytes;
 	}
 	return reached;
 }
+
+void make_list(node **root_ptr, unsigned int size, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	bool profile = false;
+	unsigned int i;
+	
+	clock_gettime(CLOCK_REALTIME,&ts_start);	
+	node* last;
+	node* root = (node*) malloc(sizeof(node));
+	strcpy(root->data, ONE_KB_STRING);
+	node* prev = root;
+
+	for (i=1; i < size; i++) {
+		node *current = (node*) malloc(sizeof(node));
+		strcpy(current->data, ONE_KB_STRING);
+		prev->next = current;
+		if (i == size-1) {
+			last = current;
+		}
+		prev = current;
+	}
+	//Make the function wrap around
+	last->next = root;
+	clock_gettime(CLOCK_REALTIME,&ts_end);
+	*root_ptr = root;
+
+	test_of_time = diff(ts_start,ts_end);
+	time_taken = test_of_time.tv_nsec;
+	
+	//Collect data
+	if (profile) {
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "List size: " << size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", size,(long)vm,(long)rss, time_taken);
+	} else {
+		cout << "List size: " << size << "; Latency: " << time_taken << " nanoseconds" << endl;
+	}
+}
+
+void read_list_wrap(node **root_ptr, unsigned int iter, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	bool profile = true;
+	unsigned int i;
+	
+	clock_gettime(CLOCK_REALTIME,&ts_start);	
+	node* p = *root_ptr;
+	for (i=1; i < iter; i++) {
+		p = p->next;
+	}
+	clock_gettime(CLOCK_REALTIME,&ts_end);
+	test_of_time = diff(ts_start,ts_end);
+	time_taken = test_of_time.tv_nsec;
+	
+	//Collect data
+	if (profile) {
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "Number of iterations: " << iter << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", iter,(long)vm,(long)rss, time_taken);
+	} else {
+		cout << "Number of iterations: " << iter << "; Latency: " << time_taken << " nanoseconds" << endl;
+	}
+
+}
+
+void free_list(node **root_ptr) {
+	node* temp1 = (*root_ptr)->next;
+	while(temp1!=(*root_ptr)) 
+	{   
+	    (*root_ptr)->next = temp1->next;
+		temp1->next = NULL;
+		free(temp1);
+		temp1 = (*root_ptr)->next;
+	}
+	free((*root_ptr));
+}
+
+
+void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	char* retrieve[1024];
+	unsigned int i;
+	for (i = 0 ; i < numMegaBytes; i++) {
+		clock_gettime(CLOCK_REALTIME,&ts_start);	
+		memcpy(retrieve,(*mallocs_ptr)[i],1024); // Copy part of the string at mallocs[i]
+	    clock_gettime(CLOCK_REALTIME,&ts_end);	
+	    test_of_time = diff(ts_start,ts_end);
+	    time_taken = test_of_time.tv_nsec;
+	    
+		//Collect data
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "Read : " << numMegaBytes << "kB; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", numMegaBytes,(long)vm,(long)rss, time_taken);
+	}
+}
+
 
 unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE* file, bool random) {
 	using std::cout;
@@ -137,28 +256,4 @@ unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE
 	//Free retrieve pointer
 	free(retrieve);
 	return numKiloBytes;
-}
-
-void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file) {
-	using std::cout;
-	using std::endl;
-	double vm, rss;
-	long page_size;
-	struct timespec ts_start,ts_end,test_of_time;
-	long unsigned time_taken;
-	char* retrieve[1024];
-	unsigned int i;
-	for (i = 0 ; i < numMegaBytes; i++) {
-		clock_gettime(CLOCK_REALTIME,&ts_start);	
-		memcpy(retrieve,(*mallocs_ptr)[i],1024); // Copy part of the string at mallocs[i]
-	    clock_gettime(CLOCK_REALTIME,&ts_end);	
-	    test_of_time = diff(ts_start,ts_end);
-	    time_taken = test_of_time.tv_nsec;
-	    
-		//Collect data
-	    process_mem_usage(vm, rss, page_size);
-	    cout << "Read : " << numMegaBytes << "kB; VM: " << vm << "kB; RAM: " << rss << "kB;";
-	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
-	    fprintf(file,"%u %li %li %lu\n", numMegaBytes,(long)vm,(long)rss, time_taken);
-	}
 }
