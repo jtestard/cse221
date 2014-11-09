@@ -17,7 +17,7 @@ for i in "${modules[@]}"
 done
 
 # User process section
-modules=( process )
+modules=( process context_switch loop_timing timing )
 for i in "${modules[@]}"
 	do
 	echo "============$i=================="

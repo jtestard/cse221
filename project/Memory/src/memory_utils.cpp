@@ -214,46 +214,45 @@ void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file)
 	}
 }
 
+void mmap_array(int **mmap_ptr, unsigned int size, char* filename) {
+    int fd;
+    int result;
 
-unsigned int read_kilobytes(char ***mallocs_ptr, unsigned int numKiloBytes, FILE* file, bool random) {
-	using std::cout;
-	using std::endl;
-	double vm, rss;
-	long page_size;
-	struct timespec ts_start,ts_end,test_of_time;
-	long unsigned time_taken;
-	char* retrieve;
-	unsigned int i,j;
-	unsigned int mb_offset = numKiloBytes / KILOBYTE; //Number of megabytes requested.
-	unsigned int kb_offset = numKiloBytes % KILOBYTE; //Should always be 0 in our case, but it could be non zero in other cases.
-	
-	void* p = malloc(KILOBYTE * sizeof(char));
-	if (!p) {
-		printf("Not enough memory available!");
-		return 0;
-	}
-	retrieve = (char*) p;
-	
-	clock_gettime(CLOCK_REALTIME,&ts_start);	
-	
-	for (i = 0; i < mb_offset; i++) {
-		for (j = 0; j < kb_offset; j++) {
-			memcpy(retrieve,(*mallocs_ptr)[i]+j,KILOBYTE);
-		}
-	}
-	
-	clock_gettime(CLOCK_REALTIME,&ts_end);	
+    fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
+    if (fd == -1) {
+	    perror("Error opening file for writing");
+	    exit(EXIT_FAILURE);
+    }
+	//Strectches file size to size of int array.
+    result = lseek(fd, size-1, SEEK_SET);
+    if (result == -1) {
+	    close(fd);
+	    perror("Error calling lseek() to 'stretch' the file");
+	    exit(EXIT_FAILURE);
+    }
+    //Necessary after using lseek.
+    result = write(fd, "", 1);
+    if (result != 1) {
+	    close(fd);
+	    perror("Error writing last byte of the file");
+	    exit(EXIT_FAILURE);
+    }
 
-	test_of_time = diff(ts_start,ts_end);
-	time_taken = test_of_time.tv_nsec;
-	
-	//Collect data
-	process_mem_usage(vm, rss, page_size);
-	cout << "Read : " << numKiloBytes << "kB; VM: " << vm << "kB; RAM: " << rss << "kB;";
-	cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
-	fprintf(file,"%u %li %li %lu\n", numKiloBytes,(long)vm,(long)rss, time_taken);
-	
-	//Free retrieve pointer
-	free(retrieve);
-	return numKiloBytes;
+    *mmap_ptr = (int*) mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (*mmap_ptr == MAP_FAILED) {
+	    close(fd);
+	    perror("Error mmapping the file");
+	    exit(EXIT_FAILURE);
+    }
+    
+    close(fd);
+}
+
+void free_mmapped_array(int **mmap_ptr, unsigned int size) {
+    /* Don't forget to free the mmapped memory
+     */
+    if (munmap(*mmap_ptr, size) == -1) {
+		perror("Error un-mmapping the file");
+		exit(EXIT_FAILURE);
+    }
 }
