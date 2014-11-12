@@ -1,4 +1,5 @@
 #include "memory_utils.h"
+#define REPEAT_COUNT 5
 
 
 struct timespec diff(struct timespec start, struct timespec end)
@@ -102,91 +103,66 @@ unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE
 	return reached;
 }
 
-void make_list(node **root_ptr, unsigned int size, FILE* file) {
+void make_array(int* &array, unsigned long size, FILE* file) {
 	using std::cout;
 	using std::endl;
 	double vm, rss;
 	long page_size;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
-	bool profile = false;
-	unsigned int i;
 	
-	clock_gettime(CLOCK_REALTIME,&ts_start);	
-	node* last;
-	node* root = (node*) malloc(sizeof(node));
-	strcpy(root->data, ONE_KB_STRING);
-	node* prev = root;
+	clock_gettime(CLOCK_REALTIME,&ts_start);
 
-	for (i=1; i < size; i++) {
-		node *current = (node*) malloc(sizeof(node));
-		strcpy(current->data, ONE_KB_STRING);
-		prev->next = current;
-		if (i == size-1) {
-			last = current;
-		}
-		prev = current;
+	array = (int *) malloc(sizeof(int) * size);
+	for (unsigned long ul=0; ul < size; ul++) {
+		array[ul] = ul % INT_MAX; // put some meaningless data in the array.
 	}
-	//Make the function wrap around
-	last->next = root;
 	clock_gettime(CLOCK_REALTIME,&ts_end);
-	*root_ptr = root;
 
 	test_of_time = diff(ts_start,ts_end);
 	time_taken = test_of_time.tv_nsec;
 	
 	//Collect data
-	if (profile) {
+	if (file != NULL) {
 	    process_mem_usage(vm, rss, page_size);
 	    cout << "List size: " << size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
 	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
-	    fprintf(file,"%u %li %li %lu\n", size,(long)vm,(long)rss, time_taken);
-	} else {
-		cout << "List size: " << size << "; Latency: " << time_taken << " nanoseconds" << endl;
+	    fprintf(file,"%lu %li %li %lu\n", size,(long)vm,(long)rss, time_taken);
 	}
 }
 
-void read_list_wrap(node **root_ptr, unsigned int iter, FILE* file) {
+void read_array(int* &array, unsigned long size, unsigned long iterations, unsigned int stride_size, FILE* file) {
 	using std::cout;
 	using std::endl;
 	double vm, rss;
 	long page_size;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
-	bool profile = true;
-	unsigned int i;
 	
-	clock_gettime(CLOCK_REALTIME,&ts_start);	
-	node* p = *root_ptr;
-	for (i=1; i < iter; i++) {
-		p = p->next;
+	clock_gettime(CLOCK_REALTIME,&ts_start);
+
+	unsigned long stride = 0;
+	int a;
+	for (unsigned int k=0 ; k < REPEAT_COUNT; k++) { //Make multiple experiments.
+	    for (unsigned long ul=0; ul < iterations; ul++) {
+	    	//Load value from array.
+	    	memcpy(&a,&array[stride],sizeof(int));
+	    	stride = (stride + stride_size) % size;
+	    }
 	}
 	clock_gettime(CLOCK_REALTIME,&ts_end);
+
 	test_of_time = diff(ts_start,ts_end);
-	time_taken = test_of_time.tv_nsec;
+	time_taken = test_of_time.tv_nsec / (iterations*REPEAT_COUNT); //The time taken is the time spent on a single read.
 	
 	//Collect data
-	if (profile) {
+	unsigned long size_kB = size / KILOBYTE;
+	if (file != NULL) {
 	    process_mem_usage(vm, rss, page_size);
-	    cout << "Number of iterations: " << iter << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << "List size: " << size_kB << "kB; Stride size: "<< stride_size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
 	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
-	    fprintf(file,"%u %li %li %lu\n", iter,(long)vm,(long)rss, time_taken);
-	} else {
-		cout << "Number of iterations: " << iter << "; Latency: " << time_taken << " nanoseconds" << endl;
+	    fprintf(file,"%lu %u %li %li %lu\n", size_kB, stride_size,(long)vm,(long)rss, time_taken);
 	}
-
-}
-
-void free_list(node **root_ptr) {
-	node* temp1 = (*root_ptr)->next;
-	while(temp1!=(*root_ptr)) 
-	{   
-	    (*root_ptr)->next = temp1->next;
-		temp1->next = NULL;
-		free(temp1);
-		temp1 = (*root_ptr)->next;
-	}
-	free((*root_ptr));
 }
 
 
@@ -256,3 +232,94 @@ void free_mmapped_array(int **mmap_ptr, unsigned int size) {
 		exit(EXIT_FAILURE);
     }
 }
+
+//DEPRECATED
+void make_list(node **root_ptr, unsigned int size, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	bool profile = false;
+	unsigned int i;
+	
+	clock_gettime(CLOCK_REALTIME,&ts_start);	
+	node* last;
+	node* root = (node*) malloc(sizeof(node));
+	strcpy(root->data, ONE_KB_STRING);
+	node* prev = root;
+
+	for (i=1; i < size; i++) {
+		node *current = (node*) malloc(sizeof(node));
+		strcpy(current->data, ONE_KB_STRING);
+		prev->next = current;
+		if (i == size-1) {
+			last = current;
+		}
+		prev = current;
+	}
+	//Make the function wrap around
+	last->next = root;
+	clock_gettime(CLOCK_REALTIME,&ts_end);
+	*root_ptr = root;
+
+	test_of_time = diff(ts_start,ts_end);
+	time_taken = test_of_time.tv_nsec;
+	
+	//Collect data
+	if (profile) {
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "List size: " << size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", size,(long)vm,(long)rss, time_taken);
+	} else {
+		cout << "List size: " << size << "; Latency: " << time_taken << " nanoseconds" << endl;
+	}
+}
+
+//DEPRECATED
+void read_list_wrap(node **root_ptr, unsigned int iter, FILE* file) {
+	using std::cout;
+	using std::endl;
+	double vm, rss;
+	long page_size;
+	struct timespec ts_start,ts_end,test_of_time;
+	long unsigned time_taken;
+	bool profile = true;
+	unsigned int i;
+	
+	clock_gettime(CLOCK_REALTIME,&ts_start);	
+	node* p = *root_ptr;
+	for (i=1; i < iter; i++) {
+		p = p->next;
+	}
+	clock_gettime(CLOCK_REALTIME,&ts_end);
+	test_of_time = diff(ts_start,ts_end);
+	time_taken = test_of_time.tv_nsec;
+	
+	//Collect data
+	if (profile) {
+	    process_mem_usage(vm, rss, page_size);
+	    cout << "Number of iterations: " << iter << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
+	    fprintf(file,"%u %li %li %lu\n", iter,(long)vm,(long)rss, time_taken);
+	} else {
+		cout << "Number of iterations: " << iter << "; Latency: " << time_taken << " nanoseconds" << endl;
+	}
+
+}
+
+//DEPRECATED
+void free_list(node **root_ptr) {
+	node* temp1 = (*root_ptr)->next;
+	while(temp1!=(*root_ptr)) 
+	{   
+	    (*root_ptr)->next = temp1->next;
+		temp1->next = NULL;
+		free(temp1);
+		temp1 = (*root_ptr)->next;
+	}
+	free((*root_ptr));
+}
+

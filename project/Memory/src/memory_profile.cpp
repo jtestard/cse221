@@ -10,26 +10,43 @@ void experimentOne() {
 	using std::cout;
 	using std::endl;
 	FILE *file;
-	node* root;
-	unsigned int list_size = 1000;
-	unsigned int read_sample_size = 15;
+	unsigned int arrays_count = 8; 
 	char filename[] = "experimentOne.csv";
-	unsigned int read_sizes[read_sample_size];
-	read_sizes[0] = 1;
-	for (unsigned int i = 1; i < read_sample_size; i++) {
-	        read_sizes[i] = read_sizes[i-1] << 1;
+	unsigned long array_sizes[arrays_count];// Array size will be 2^(8+array_size);
+	int* arrays[arrays_count];
+	unsigned int stride_sizes[4];
+	stride_sizes[0] = 1;
+	stride_sizes[1] = 8;
+	stride_sizes[2] = 64;
+	stride_sizes[3] = 512;
+	array_sizes[0] = 256 * KILOBYTE;
+	for (unsigned int i = 1; i < arrays_count; i++) {
+	    array_sizes[i] = array_sizes[i-1] << 1;
 	}
+	unsigned long iterations = 1000000; //1 Million iterations.
 	file = fopen(filename,"w");
 	if (!file) {
 		printf("There was a problem trying to open file : %s... experiment aborted.\n", filename);
 		exit(1);
 	}
 	printf("Starting experiment one...\n");
-	make_list(&root, list_size, file);
-	for (unsigned int i = 0; i < read_sample_size; i++) {
-		read_list_wrap(&root, read_sizes[i], file);
+	for (unsigned int i = 0; i < arrays_count; i++) {
+		make_array(arrays[i],array_sizes[i],NULL);
 	}
-	free_list(&root);
+	for(unsigned int j = 0; j < 4; j++) {
+		for (unsigned int i = 0; i < arrays_count; i++) {
+			read_array(
+				arrays[i],
+				array_sizes[i],
+				iterations,
+				stride_sizes[j],
+				file
+			);
+		}
+	}
+	for (unsigned int i = 0; i < arrays_count; i++) {
+		free(arrays[i]);
+	}
 	fclose(file);
 }
 
@@ -66,8 +83,6 @@ void experimentTwo() {
 	mmapped_array2[5] = mmapped_array1[5];
 	mmapped_array2[6] = mmapped_array1[6];
 	mmapped_array2[7] = mmapped_array1[7];
-	//mmapped_array2[8] = mmapped_array1[8];
-	//mmapped_array2[9] = mmapped_array1[9];
 	clock_gettime(CLOCK_REALTIME,&ts_end);	
 	
 	test_of_time = diff(ts_start,ts_end);
@@ -118,6 +133,6 @@ void experimentThree() {
 int main(int argc, char **argv, char **envp) {
 	experimentOne();
 	experimentTwo();
-	experimentThree();
+	//experimentThree();
 	return 0;
 }
