@@ -1,5 +1,5 @@
 #include "memory_utils.h"
-#define REPEAT_COUNT 5
+#define REPEAT_COUNT 1 
 
 
 struct timespec diff(struct timespec start, struct timespec end)
@@ -56,7 +56,6 @@ unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE
 	using std::endl;
 	double vm, rss;
 	long page_size;
-	bool profile = true;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
 
@@ -86,13 +85,14 @@ unsigned int write_megabyte(char ***mallocs_ptr, unsigned int numMegaBytes, FILE
 		time_taken = test_of_time.tv_nsec;
 		
 		//Collect data
-		if (profile) {
+		if (file != NULL) {
 		    process_mem_usage(vm, rss, page_size);
 		    cout << "Allocated : " << i+1 << "MB; VM: " << vm << "kB; RAM: " << rss << "kB;";
 		    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
 		    fprintf(file,"%i %li %li %lu\n",i+1,(long)vm,(long)rss, time_taken);
 		} else {
-			cout << ".";
+			printf(".");
+			fflush(stdout);
 		}
 	}
 	cout << endl;
@@ -110,22 +110,24 @@ void make_array(int* &array, unsigned long size, FILE* file) {
 	long page_size;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
+	srand(time(NULL));
 	
 	clock_gettime(CLOCK_REALTIME,&ts_start);
 
 	array = (int *) malloc(sizeof(int) * size);
 	for (unsigned long ul=0; ul < size; ul++) {
-		array[ul] = ul % INT_MAX; // put some meaningless data in the array.
+		array[ul] = rand(); //Fill the array with some random values.
 	}
 	clock_gettime(CLOCK_REALTIME,&ts_end);
 
 	test_of_time = diff(ts_start,ts_end);
 	time_taken = test_of_time.tv_nsec;
 	
+	unsigned long size_kB = (size * sizeof(int)) / KILOBYTE;
 	//Collect data
 	if (file != NULL) {
 	    process_mem_usage(vm, rss, page_size);
-	    cout << "List size: " << size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
+	    cout << "List size: " << size_kB << "kB; VM: " << vm << "kB; RAM: " << rss << "kB;";
 	    cout << " RAM PageSize:" << page_size << "kB; Latency: " << time_taken << " nanoseconds;"<< endl;
 	    fprintf(file,"%lu %li %li %lu\n", size,(long)vm,(long)rss, time_taken);
 	}
@@ -146,7 +148,7 @@ void read_array(int* &array, unsigned long size, unsigned long iterations, unsig
 	for (unsigned int k=0 ; k < REPEAT_COUNT; k++) { //Make multiple experiments.
 	    for (unsigned long ul=0; ul < iterations; ul++) {
             temp = array[stride];
-	    	stride = (stride + stride_size) % size;
+	    	stride = (stride + stride_size) % (size + temp - temp); //dummy use of temp
 	    }
 	}
 	clock_gettime(CLOCK_REALTIME,&ts_end);
@@ -155,7 +157,7 @@ void read_array(int* &array, unsigned long size, unsigned long iterations, unsig
 	time_taken = test_of_time.tv_nsec / (iterations*REPEAT_COUNT); //The time taken is the time spent on a single read.
 	
 	//Collect data
-	unsigned long size_kB = size / KILOBYTE;
+	unsigned long size_kB = (size * sizeof(int)) / KILOBYTE;
 	if (file != NULL) {
 	    process_mem_usage(vm, rss, page_size);
 	    cout << "List size: " << size_kB << "kB; Stride size: "<< stride_size << "; VM: " << vm << "kB; RAM: " << rss << "kB;";
@@ -189,7 +191,7 @@ void read_all_memory(char ***mallocs_ptr, unsigned int numMegaBytes, FILE* file)
 	}
 }
 
-void mmap_array(int **mmap_ptr, unsigned int size, char* filename) {
+void mmap_array(int* &mmapped_array, unsigned int size, char* filename) {
     int fd;
     int result;
 
@@ -213,8 +215,8 @@ void mmap_array(int **mmap_ptr, unsigned int size, char* filename) {
 	    exit(EXIT_FAILURE);
     }
 
-    *mmap_ptr = (int*) mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (*mmap_ptr == MAP_FAILED) {
+    mmapped_array = (int*) mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (mmapped_array == MAP_FAILED) {
 	    close(fd);
 	    perror("Error mmapping the file");
 	    exit(EXIT_FAILURE);
@@ -223,10 +225,10 @@ void mmap_array(int **mmap_ptr, unsigned int size, char* filename) {
     close(fd);
 }
 
-void free_mmapped_array(int **mmap_ptr, unsigned int size) {
+void free_mmapped_array(int* mmapped_array, unsigned int size) {
     /* Don't forget to free the mmapped memory
      */
-    if (munmap(*mmap_ptr, size) == -1) {
+    if (munmap(mmapped_array, size) == -1) {
 		perror("Error un-mmapping the file");
 		exit(EXIT_FAILURE);
     }

@@ -21,7 +21,7 @@ void experimentThree() {
 		exit(1);
 	}
 	printf("Starting experiment three...\n");
-	unsigned int written = write_megabyte(&mallocs, write_size, file);
+	unsigned int written = write_megabyte(&mallocs, write_size, NULL);
 	if (written!=write_size) {
 		printf("Error! Less than %dMB written, aborting experiment", written);
 		exit(1);

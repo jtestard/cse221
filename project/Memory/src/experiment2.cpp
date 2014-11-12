@@ -9,8 +9,9 @@ void experimentTwo() {
 	using std::endl;
 	FILE *file;
 	char filename[] = "experimentTwo.csv";
-	char mmap_file_name1[] = "/tmp/mmapped.bin";
-	char mmap_file_name2[] = "/tmp/mmapped2.bin";
+	//char mmap_file_name1[] = "/tmp/mmapped.bin";
+	//char mmap_file_name2[] = "/tmp/mmapped2.bin";
+	const unsigned long BILLION = 1000000000;
 	int* mmapped_array1;
 	int* mmapped_array2;
 	unsigned int memory_size = 8 * MEGABYTE;
@@ -22,30 +23,32 @@ void experimentTwo() {
 		exit(1);
 	}
 	printf("Starting experiment two...\n");
+	srand(time(NULL));
 	//Allocate memory for arrays using mmap
-	mmap_array(&mmapped_array1, memory_size, mmap_file_name1);
-	mmap_array(&mmapped_array2, memory_size, mmap_file_name2);
-	for (int j = 0; j < 8; j++)
-		mmapped_array1[j] = j;
+	mmapped_array1 = (int*) malloc(memory_size * sizeof(int));
+	mmapped_array2 = (int*) malloc(memory_size * sizeof(int));
+	for (unsigned int j = 0; j < 8 * MEGABYTE; j++)
+		mmapped_array1[j] = rand();
 	// Use loop unrolling to copy integers from array1 to array2
-	clock_gettime(CLOCK_REALTIME,&ts_start);	
-	mmapped_array2[0] = mmapped_array1[0];
-	mmapped_array2[1] = mmapped_array1[1];
-	mmapped_array2[2] = mmapped_array1[2];
-	mmapped_array2[3] = mmapped_array1[3];
-	mmapped_array2[4] = mmapped_array1[4];
-	mmapped_array2[5] = mmapped_array1[5];
-	mmapped_array2[6] = mmapped_array1[6];
-	mmapped_array2[7] = mmapped_array1[7];
+	// Using memcpy instead of bcopy because it was deprecated.
+	clock_gettime(CLOCK_REALTIME,&ts_start);
+	memcpy(mmapped_array2, mmapped_array1, MEGABYTE);
+	memcpy(mmapped_array2+ 1* MEGABYTE, mmapped_array1+ 1* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 2* MEGABYTE, mmapped_array1+ 2* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 3* MEGABYTE, mmapped_array1+ 3* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 4* MEGABYTE, mmapped_array1+ 4* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 5* MEGABYTE, mmapped_array1+ 5* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 6* MEGABYTE, mmapped_array1+ 6* MEGABYTE, MEGABYTE);
+	memcpy(mmapped_array2+ 7* MEGABYTE, mmapped_array1+ 7* MEGABYTE, MEGABYTE);
 	clock_gettime(CLOCK_REALTIME,&ts_end);	
 	
 	test_of_time = diff(ts_start,ts_end);
 	time_taken = test_of_time.tv_nsec;
-	cout << "Time taken:" << time_taken << " nanoseconds;"<< endl;
+	cout << "Read+Write bandwith: " << (8 * BILLION) / time_taken << "MB/secs;"<< endl;
 	fprintf(file,"%lu\n", time_taken);
-	
-	free_mmapped_array(&mmapped_array1, memory_size);
-	free_mmapped_array(&mmapped_array2, memory_size);
+
+	free(mmapped_array1);
+	free(mmapped_array2);
 	fclose(file);
 }
 

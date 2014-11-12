@@ -92,9 +92,9 @@ void free_list(node **root_ptr);
 
 void read_list_wrap(node **root_ptr, unsigned int iter, FILE* file);
 
-void free_mmapped_array(int **mmap_ptr, unsigned int size);
+void free_mmapped_array(int* mmapped_array, unsigned int size);
 
-void mmap_array(int **mmap_ptr, unsigned int size, char* filename);
+void mmap_array(int* &mmapped_array, unsigned int size, char* filename);
 
 void read_array(int * &array, unsigned long size, unsigned long iterations, unsigned int stride_size, FILE* file);
 

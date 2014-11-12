@@ -3,8 +3,9 @@
 #we execute the script.
 make all
 
-./bin/experiment1
-./bin/experiment2
+#sudo cgexec -g memory:limited ./bin/experiment1
+sudo ./bin/experiment1
+sudo ./bin/experiment2
 
 #Execute the file with the argument given to the bash script
 #This will apply the cgconfig.
