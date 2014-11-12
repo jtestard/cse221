@@ -3,9 +3,12 @@
 #we execute the script.
 make all
 
+./bin/experiment1
+./bin/experiment2
+
 #Execute the file with the argument given to the bash script
 #This will apply the cgconfig.
-sudo cgexec -g memory:limited bin/memory_profile
+sudo cgexec -g memory:limited bin/experiment3
 
 #Cleanup.
 make clean

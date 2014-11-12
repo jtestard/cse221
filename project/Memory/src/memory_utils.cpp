@@ -138,16 +138,13 @@ void read_array(int* &array, unsigned long size, unsigned long iterations, unsig
 	long page_size;
 	struct timespec ts_start,ts_end,test_of_time;
 	long unsigned time_taken;
-    int temp;
+    int temp = 0;
 	
 	clock_gettime(CLOCK_REALTIME,&ts_start);
 
 	unsigned long stride = 0;
-	int a;
 	for (unsigned int k=0 ; k < REPEAT_COUNT; k++) { //Make multiple experiments.
 	    for (unsigned long ul=0; ul < iterations; ul++) {
-	    	//Load value from array.
-            //memcpy(&a,&array[stride],sizeof(int));
             temp = array[stride];
 	    	stride = (stride + stride_size) % size;
 	    }
