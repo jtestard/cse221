@@ -1,7 +1,7 @@
 SRCPATH = ./src/
 BINPATH = ./bin/
 CC = g++
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g  -o0
 CXXFLAGS = $(CFLAGS)
 
 all: $(SRCPATH)memory_profile.o $(SRCPATH)memory_utils.o

@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define ITERATIONS 10000
-#define LOOPS 10000
+#define ITERATIONS 10
+#define LOOPS 10
 
 // Determined from previous experiment
 #define TIMING_OVERHEAD 40
@@ -35,12 +35,12 @@ int main(void)
         loop_time = (times[i] - TIMING_OVERHEAD) / (double) LOOPS;
         results[i] = loop_time;
 
-        printf("Iteration %d: The total overhead for %d loops is: %" PRIu64 " cycles\n", i, LOOPS, times[i]);
-        printf("    The average loop overhead is: %f\n cycles", loop_time);
+        printf("Iteration %d: The total overhead for %d loops is: %" PRIu64 "\n", i, LOOPS, times[i]);
+        printf("    The average loop overhead is: %f\n", loop_time);
     }
 
     qsort (results, ITERATIONS, sizeof(uint64_t), compare);
-    printf("[*] The median loop overhead across all iterations is: %f cycles\n", results[ITERATIONS/2]);
+    printf("[*] The median loop overhead across all iterations is: %f\n", results[ITERATIONS/2]);
     
     return 0;
 }
