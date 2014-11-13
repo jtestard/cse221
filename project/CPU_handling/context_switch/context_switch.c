@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-#define ITERATIONS 10000
+#define ITERATIONS 10
 #define TIMING_OVERHEAD 40
 
 int compare(const void *, const void *);
