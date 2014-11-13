@@ -9,6 +9,7 @@ sudo cgcreate -g memory:limited
 
 #Configure Cgroup
 sudo cgset -r memory.limit_in_bytes=75M limited
+sudo cgset -r cpuset.cpus="0" limited
 
 echo ""
 echo "
