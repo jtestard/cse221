@@ -1,7 +1,7 @@
 #include <iostream>
 #include "memory_utils.h"
 
-#define ARRAYS_COUNT 15
+#define ARRAYS_COUNT 13
 #define NUM_OF_STRIDES 4
 
 void experimentOne() {
