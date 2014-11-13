@@ -112,5 +112,51 @@ the opportunity to shut down compiler optimizations!). This time, we use a linux
 \texttt{clone()} system call and had the child process execute the fibonacci
 function. Measurements available soon.
 
-\subsection{Context Switch Time} \subsubsection{Process Context Switch}
+\subsection{Context Switch Time} 
+
+In order to measure the time taken for a context switch to occur, we implemented
+a methodology using pipes to deterministically context switch between a parent
+process or thread to its child and then back. Once a process is forked or a new
+thread is cloned the parent reads from a pipe and the child writes a single
+character of data to the pipe. The parent must block since there is no data
+immediately available to be read, this causes a context switch to occur and the
+child process to be scheduled for execution. The child writes to the pipe and
+exits which causes another context switch back to the parent process which can
+now read data from the pipe and then exit. 
+
+We instantiate the pipes outside the timing harness in order to minimize the effect
+of code that is not part of the context switch from affecting our timing
+results. There are operations performed within our timing loop that will add
+some overhead to our timing results (e.g. reads and writes to pipes), but we
+believe the context switch time should dominate and the additional overhead will
+not skew the usefulness of our results.
+
+We perform the timing with the code that performs the context switch in loop
+that performs 10,000 iterations. The elapsed time for a context switch is stored
+on each iteration and the median of all results is output as the final result in
+order to minimize the spurious results.
+
+\subsubsection{Process Context Switch} 
+We use the fork system call in order to create the child process which will
+write to the pipe. We had a difficult time coming up with an estimate for the
+time to perform a context switch. Since context switches in Linux are primarily
+performed in software we believe the time should be proportional to the latency
+in pushing all processor registers that must be saved to the kernel stack plus
+the cost of installing a new address space for the process that is going to be
+scheduled.
+
+Our experimental results show that the median time to perform a process context
+switch is 180,566 cycles which is approximately equal to 72 micro seconds on the
+2.5GHz test machine. 
+
 \subsubsection{Thread Context Switch}
+We use the clone system call with the CLONE_VM flag set in order to create a
+thread which shares resources with the parent process. We faced the same
+difficulty in estimating the time of context switching between threads, but we
+can state with confidence that it should be at least an order of magnitude less
+that the time taken to perform a context switch between processes because the
+address space is shared.
+
+Our experimental results show that the median time to perform a thread context
+switch is 38,566 cycles which is approximately equal to 15 micro seconds on the
+2.5GHz test machine.
