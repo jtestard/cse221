@@ -1,39 +1,119 @@
-\subsection{Measuring Time Methodology}
+\subsection{Measurement Overhead}
 
-In order to accurately measure execution time we implemented a timing methodology that reads the 
-hardware time-stamp counter before and after a procedure (by procedure here we mean lines of C or assembly code we wish to profile, not necessarily a procedure call). We created a kernel module that disables 
-preemption and hard interrupts in order to gain exclusive access to the processor. The RDTSC 
-instruction is called in a block of inline assembly within the kernel module to save the 
-initial time immediately before the procedure is called and again after the procedure exits. The initial time is subtracted from the final time to calculate the number of cycles that have elapsed. This process
-is repeated for a parameterized number of repetitions in order to calculate an average elapsed time that 
-compensates for any indeterminism. The same methodology was used for most measurements.
+In order to accurately measure execution time we implemented a timing
+methodology that reads the hardware time-stamp counter before and after a
+procedure (by procedure here we mean lines of C or assembly code we wish to
+profile, not necessarily a procedure call).  The time-stemp is read immediately
+before the procedure is called and again after the procedure exits. The two
+output values correspond to the start and end times of the procedure being
+executed. The initial time is subtracted from the final time to calculate the
+number of cycles that have elapsed.
 
-\subsection{Measuring time overhead}
+The implementation for reading the time-stamp makes use of the assembly
+instructions CPUID, RDTSC, and RDTSCP. CPUID and RDTSCP are used to force
+serialization of instructions so that instructions which are not part of the
+code being instrumented do not pollute our measurements due to out-of-order
+execution.\cite{intel}
 
-For computing the overhead of reading time, we did not have to put any procedure between the two reads to the hardware timestamp counters. We were able to measure the overhead of reading time to be on average 52 cycles. 
+We run the timing harness and procedure being timed in a loop of 10,000
+iterations. The execution time is collected on each iteration of the loop. We
+use the median execution time over all iterations as the final result in order
+to reduce the influence that extreme values caused by context switches,
+interrupts and other exceptional events have on our experiment. 
 
-\subsection{Measuring loop overhead}
+\subsubsection{Measuring time overhead} 
 
-One difficulty of using kernel modules is that we are forced to compile our modules with compiler optimizations turned on ~\cite{linux}. As such, we can only profile assembly code or C code that a compiler cannot optimize.
+We estimate that the hardware overhead of reading the time-stamp registers and
+calculating the elapsed time is 2 cycles. Since the time-stamp is implemented in
+registers it would require 1 cycle to read the current time. 
 
-For the looping overhead,  we have to be careful that our looping procedure does not get optimized out either by the compiler or the assembly interpreter. For example, an empty loop would be quickly optimized with a constant propagation compiler pass. As such, we inserted a call to the \texttt{rand()} C function (for pseudo-random numbers) which guarantees the loop actually has to execute our specified number of times in order to obtain a correct result. 
+We implemented the reading of the start and end time with inline assembly. The
+code to read the start time and the code to read the end time each consists of
+four assembly instructions. This includes the calls to CPUID which act as a
+fence to force sequential execution of code.  Since the time-stamp register is
+64-bits we retrieve the upper and lower 32-bits into two separate registers. We
+reform the original 64-bit value by using a shift and bitwise or
+operation.Finally,  The two 64-bit values are subtracted to produce the final
+elapsed time in cycles. We estimate the software overhead to be 15 cycles.
 
-Using our methodology, we measured the average time required to compute 100 independent calls to \texttt{rand()} and 100 calls within a loop. We then subtract the former from the latter. Measurements will be available soon.
+The total overhead of our measuring mechanism is estimated to be 17 cycles.
+
+In order to gain the most accurate measure of the timing overhead we disabled
+additional cores and frequency scaling within the bios.
+
+For computing the overhead of reading time, we ran the timing harness that was
+previously described without any intervening code.  Our results show that the
+overhead of reading time to be 40 cycles. 
+
+Our results show that we underestimated the overhead of our timing mechanism. We
+believe this is due to our assumption that the instructions CPUID and RDTSCP,
+which is a serializing version of RDTSC, executes in a single cycle. We were
+able to verify this by removing the CPUID calls and replacing RDTSCP with RDTSC.
+The experiment without the serializing instructions showed that the overhead of
+the timing mechanism was 22 cycles which is closer to our estimated result.
+
+\subsubsection{Measuring loop overhead}
+
+For the looping overhead,  we have to be careful that our looping procedure does
+not get optimized out either by the compiler or the assembly interpreter. For
+example, an empty loop would be quickly optimized with a constant propagation
+compiler pass. As such, we inserted a call to the \texttt{rand()} C function
+(for pseudo-random numbers) which guarantees the loop actually has to execute
+our specified number of times in order to obtain a correct result. In order to
+ensure that no optimizations are performed,  we disable compiler optimizations
+by using the "-o0" flag and implemented our procedure under test using inline
+assembly.
+
+The procedure under test is a loop, written in 5 lines of assembly code, that
+runs for 10 iterations.  We estimate that a loop would not add any hardware
+overhead. In terms of software overhead, we estimate that 5 additional cycles
+will be required for each iteration of the loop. This number was arrived at by
+examining the assembly code that implements the loop and assuming that each
+instruction executes in a single cycle.
+
+Our results show that our estimate of the loop overhead was very close to the
+measured loop overhead of 4 cycles. The discrepency is the result of counting an
+instruction that initializes the number of loops to perform by moving a
+parameter into a register. This instruction does not participate in the actual
+loop.
+
+An interesting result that we discovered is that after several iterations of the
+timing procedure (i.e. timing and loop of ten iterations) the loop overhead is
+reduced to a single cycle. We suspect this is due to optimizations which are
+occuring in the hardware in spite of disabling optimizations during compile
+time.
 
 \subsection{Procedure call overhead}
 
-Here as well, we had to be careful about compiler optimizations. Again we used the \texttt{rand()} function. The procedures we profile makes a unique call to the rand() function and returns (and never uses any of its arguments). We create eight such procedures (with 0 to 7 arguments).
+Here as well, we had to be careful about compiler optimizations. Again we used
+the \texttt{rand()} function. The procedures we profile makes a unique call to
+the rand() function and returns (and never uses any of its arguments). We create
+eight such procedures (with 0 to 7 arguments).
 
-Using our methodology, we measured the average time required for a single call to the \texttt{rand()} function and each of our eight procedures (and compute the difference). Measurements available soon.
+Using our methodology, we measured the average time required for a single call
+to the \texttt{rand()} function and each of our eight procedures (and compute
+the difference). Measurements available soon.
 
 \subsection{System call overhead}
 
 \subsection{Task Creation Time}
 
-In order to compare the execution time of a kernel thread and a process, we setup a (slow) fibonacci function which would be the only thing the kernel thread or process would execute.
+In order to compare the execution time of a kernel thread and a process, we
+setup a (slow) fibonacci function which would be the only thing the kernel
+thread or process would execute.
 
-We were able to profile kernel threads using our methodology. The procedure between the two hardware counters simply creates a kernel thread which runs the fibonacci function waits for that thread to complete. The average time spent by the thread was 32264 cycles.
+We were able to profile kernel threads using our methodology. The procedure
+between the two hardware counters simply creates a kernel thread which runs the
+fibonacci function waits for that thread to complete. The average time spent by
+the thread was 32264 cycles.
 
-While kernel threads can be measured using our methodology, processes cannot be created with a kernel module, since there is no fork or exec call in the linux kernel API. As such for this task, we had to go out of kernel mode and write a user program at the possible cost of loss of precision (however, this gave us the opportunity to shut down compiler optimizations!). This time, we use a linux \texttt{clone()} system call and had the child process execute the fibonacci function. Measurements available soon.
+While kernel threads can be measured using our methodology, processes cannot be
+created with a kernel module, since there is no fork or exec call in the linux
+kernel API. As such for this task, we had to go out of kernel mode and write a
+user program at the possible cost of loss of precision (however, this gave us
+the opportunity to shut down compiler optimizations!). This time, we use a linux
+\texttt{clone()} system call and had the child process execute the fibonacci
+function. Measurements available soon.
 
-\subsection{Context Switch Time}
+\subsection{Context Switch Time} \subsubsection{Process Context Switch}
+\subsubsection{Thread Context Switch}

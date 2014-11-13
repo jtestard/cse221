@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define ITERATIONS 10000
+#define ITERATIONS 1000
 
 int compare(const void *, const void *);
 void GetElapsedTime(uint64_t *);
@@ -53,7 +53,8 @@ void inline GetElapsedTime(uint64_t *times) {
                  "CPUID\n\t"
                  "RDTSC\n\t"
                  "mov %%edx, %0\n\t"
-                 "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
+                 "mov %%eax, %1\n\t"
+                 : "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
                  );
 
 
@@ -61,7 +62,8 @@ void inline GetElapsedTime(uint64_t *times) {
                  "RDTSCP\n\t"
                  "mov %%edx, %0\n\t"
                  "mov %%eax, %1\n\t"
-                 "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
+                 "CPUID\n\t"
+                 : "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
                  );
 
     for (i = 0; i < ITERATIONS; i++) {
@@ -71,7 +73,8 @@ void inline GetElapsedTime(uint64_t *times) {
                      "CPUID\n\t"
                      "RDTSC\n\t"
                      "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
+                     "mov %%eax, %1\n\t"
+                     : "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
                      );
 
         /*********************************************
@@ -85,7 +88,8 @@ void inline GetElapsedTime(uint64_t *times) {
                      "RDTSCP\n\t"
                      "mov %%edx, %0\n\t"
                      "mov %%eax, %1\n\t"
-                     "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
+                     "CPUID\n\t"
+                     : "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
                      );
 
         start = (((uint64_t) cycles_high << 32) | cycles_low);
