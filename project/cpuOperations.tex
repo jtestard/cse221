@@ -57,12 +57,9 @@ the timing mechanism was 22 cycles which is closer to our estimated result.
 For the looping overhead,  we have to be careful that our looping procedure does
 not get optimized out either by the compiler or the assembly interpreter. For
 example, an empty loop would be quickly optimized with a constant propagation
-compiler pass. As such, we inserted a call to the \texttt{rand()} C function
-(for pseudo-random numbers) which guarantees the loop actually has to execute
-our specified number of times in order to obtain a correct result. In order to
-ensure that no optimizations are performed,  we disable compiler optimizations
-by using the "-o0" flag and implemented our procedure under test using inline
-assembly.
+compiler pass.  In order to ensure that no optimizations are performed,  we
+disable compiler optimizations by using the "-o0" flag and implemented our
+procedure under test using inline assembly.
 
 The procedure under test is a loop, written in 5 lines of assembly code, that
 runs for 10 iterations.  We estimate that a loop would not add any hardware
