@@ -14,5 +14,6 @@
 *.order
 .*.swp
 *.csv
+~*
 .tmp_versions
 project/Memory/bin/*
