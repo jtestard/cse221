@@ -21,7 +21,7 @@ int main(void)
 {
     int i;
     uint64_t *times;
-    double results[ITERATIONS];
+    int results[ITERATIONS];
 
     times = malloc(ITERATIONS*sizeof(uint64_t*));
 
@@ -33,14 +33,18 @@ int main(void)
     printf("[*] Starting kthread context switch experiment...\n");
 
     GetElapsedTime(times);
+    printf("DEBUG");
 
     for (i = 0; i < ITERATIONS; i++) {
         results[i] = times[i] - TIMING_OVERHEAD;
         printf("Iteration %d: kthread Context Switch = %" PRIu64 " cycles\n", i, times[i]);
     }
 
-    qsort (results, ITERATIONS, sizeof(uint64_t), compare);
-    printf("[*] The median kthread context switch overhead across all iterations is: %f cycles\n", results[ITERATIONS/2]);
+    qsort (results, ITERATIONS, sizeof(int), compare);
+    for (i = 0; i < ITERATIONS; i++) {
+        printf("Iteration %d: kthread Context Switch = %d cycles\n", i, results[i]);
+    }
+    printf("[*] The median kthread context switch overhead across all iterations is: %d cycles\n", results[ITERATIONS/2]);
     
     return 0;
 }

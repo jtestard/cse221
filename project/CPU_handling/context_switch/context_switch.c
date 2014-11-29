@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-#define ITERATIONS 10
+#define ITERATIONS 1000
 #define TIMING_OVERHEAD 40
 
 int compare(const void *, const void *);
@@ -15,7 +15,7 @@ int main(void)
 {
     int i;
     uint64_t *times;
-    double results[ITERATIONS];
+    int results[ITERATIONS];
 
     times = malloc(ITERATIONS*sizeof(uint64_t*));
 
@@ -33,8 +33,9 @@ int main(void)
         printf("Iteration %d: Context Switch = %" PRIu64 " cycles\n", i, times[i]);
     }
 
-    qsort (results, ITERATIONS, sizeof(uint64_t), compare);
-    printf("[*] The median context switch overhead across all iterations is: %f cycles\n", results[ITERATIONS/2]);
+    qsort (results, ITERATIONS, sizeof(int), compare);
+
+    printf("[*] The median context switch overhead across all iterations is: %d cycles\n", results[ITERATIONS/2]);
     
     return 0;
 }
