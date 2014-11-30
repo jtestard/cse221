@@ -18,8 +18,6 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#define BUFSIZE 1
-
 // Determined from previous experiment
 #define TIMING_OVERHEAD 40
 
@@ -81,8 +79,11 @@ int inline GetElapsedTime(uint64_t *times) {
     struct addrinfo remote;
     struct sockaddr_in remote_addr;
     struct in_addr raddr;
-    char buf[BUFSIZE];
-    char *msg = "A";
+    char buf[DATA_BYTES];
+    char msg[DATA_BYTES];
+
+    for (i = 0; i < DATA_BYTES; i++)
+        msg[i] = 'a';
 
     len = strlen(msg);
     memset(&remote, 0, sizeof remote);
@@ -142,7 +143,7 @@ int inline GetElapsedTime(uint64_t *times) {
          * Send a packet and wait for reply/ack
          *********************************************/
         send(sock_fd, msg, len, 0);
-        recv(sock_fd, buf, BUFSIZE, 0);
+        bytes_read = recv(sock_fd, buf, DATA_BYTES, 0);
 
         asm volatile (
                      "RDTSCP\n\t"
@@ -151,6 +152,11 @@ int inline GetElapsedTime(uint64_t *times) {
                      "CPUID\n\t": "=r" (cycles_high1), "=r" (cycles_low1)::"%rax", "%rbx", "%rcx", "%rdx"
                      );
 
+        if (bytes_read != DATA_BYTES) {
+            i--;
+            continue;
+        }
+        printf("Sent %d bytes : Read %d bytes\n", DATA_BYTES, bytes_read);
         start = (((uint64_t) cycles_high << 32) | cycles_low);
         end = (((uint64_t) cycles_high1 << 32) | cycles_low1);
 
