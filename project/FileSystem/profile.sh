@@ -4,13 +4,13 @@ if [ -e "random_access.csv" ]
 then
 	rm random_access.csv
 fi
-if [ -e "sequential_scan.csv" ]
+if [ -e "sequential_access.csv" ]
 then
-	rm sequentia_scan.csv
+	rm sequentia_access.csv
 fi
 
 touch random_access.csv
-touch sequential_scan.csv
+touch sequential_access.csv
 
 modules=( 32 64 128 256 512 1024 2048 4096 8192 16384 )
 for i in "${modules[@]}":
