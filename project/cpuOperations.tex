@@ -150,7 +150,7 @@ switch is 180,566 cycles which is approximately equal to 72 micro seconds on the
 2.5GHz test machine. 
 
 \subsubsection{Thread Context Switch}
-We use the clone system call with the CLONE_VM flag set in order to create a
+We use the clone system call with the CLONE\_VM flag set in order to create a
 thread which shares resources with the parent process. We faced the same
 difficulty in estimating the time of context switching between threads, but we
 can state with confidence that it should be at least an order of magnitude less
