@@ -3,7 +3,13 @@ BINPATH = ./bin/
 CC = gcc
 CFLAGS = -Wall -g
 
-all: $(SRCPATH)custom_lib.o $(BINPATH)random_access $(BINPATH)sequential_access
+all: $(SRCPATH)custom_lib.o $(BINPATH)random_access $(BINPATH)sequential_access $(BINPATH)fill_mem
+
+$(BINPATH)fill_mem: $(SRCPATH)fill_mem.o
+	$(CC) $(CFLAGS) $(SRCPATH)fill_mem.o -o $(BINPATH)fill_mem
+
+$(SRCPATH)fill_mem.o: $(SRCPATH)fill_mem.c
+	$(CC) $(CFLAGS) -c $(SRCPATH)fill_mem.c -o $(SRCPATH)fill_mem.o
 
 $(BINPATH)sequential_access: $(SRCPATH)sequential_access.o
 	$(CC) $(CFLAGS) $(SRCPATH)custom_lib.o $(SRCPATH)sequential_access.o -o $(BINPATH)sequential_access
