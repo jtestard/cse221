@@ -22,8 +22,8 @@ void done_sequential()
 	if (count) {
 		double MB_per_sec = count / (double) getTimeout();
 		double access_time_per_block = getTimeout() / ((double)(count * getMegabyte()) / getblocksize());
-	    printf(".\n[*] Results: %.0f MB/second, %.2f ms access time per block\n", 
-                                                        MB_per_sec, access_time_per_block * 1000.0);
+        printf(".\n[*] Results: %.0f MB/second, %.2f ms access time per block\n",
+                                                             MB_per_sec, access_time_per_block * 1000.0);
 		fprintf(file, "%lu %.2f %.5f\n", 
 				numblocks * getblocksize() / getMegabyte(),
 				MB_per_sec,
@@ -37,18 +37,19 @@ void done_sequential()
 // Does random seeking through the disk.
 int main(int argc, char **argv)
 {
+//	unsigned long getblocksize() = 4096;
 	int fd, retval;
-	unsigned long file_size, BLCKS_PER_MB, total_size, total_read;
+	unsigned long BLCKS_PER_MB, total_size, total_read;
 	BLCKS_PER_MB = getMegabyte() / getblocksize();
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	if (argc != 5) {
-		printf("Usage: sequential_access <raw disk device> <fake_file_size_in_mb>\n");
+		printf("Usage: file_cache_size  <raw disk device> <fake_file_size_in_mb>\n");
 		exit(EXIT_SUCCESS);
 	}
-	// Open file with O_DIRECT, which will bypass file cache.
-    fd = open(argv[1], O_RDONLY | O_DIRECT );
+
+    fd = open(argv[1], O_RDONLY);
 	handle("open", fd < 0);
 	numblocks = atoi(argv[2]) * BLCKS_PER_MB; // WARNING : will fail silently in case of misuse.
 	
@@ -57,9 +58,9 @@ int main(int argc, char **argv)
 
 	total_size = numblocks * getblocksize();
 
-    posix_memalign((void*)&buffer, getMegabyte(), getMegabyte());
+    buffer = (char *) malloc(getMegabyte());
 
-	printf("Sequential Access : %s [%luMB] [%lu blocks], wait %d seconds\n",
+	printf("File Cache Size: %s [%luMB] [%lu blocks], wait %d seconds",
 	       argv[1], numblocks / BLCKS_PER_MB, numblocks, getTimeout());
 
 	// Perform experiment
