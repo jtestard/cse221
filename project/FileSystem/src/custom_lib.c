@@ -14,3 +14,5 @@ void handle(const char *string, int error)
 unsigned long getblocksize() { return BLOCKSIZE; }
 unsigned long getMegabyte() { return MEGABYTE; }
 int getTimeout() { return TIMEOUT; }
+
+void setTimeout(int t) { TIMEOUT = t;}

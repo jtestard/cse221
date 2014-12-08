@@ -2,12 +2,12 @@
 
 unsigned long numblocks;
 char *buffer;
+char *filename = NULL;
 
 void done_sequential()
 {
 	time_t end;
 	FILE *file;
-	char filename[] = "sequential_access.csv";
 
 	time(&end);
 
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-	if (argc != 3) {
+	if (argc != 5) {
 		printf("Usage: random_seek <raw disk device> <fake_file_size_in_mb>\n");
 		exit(EXIT_SUCCESS);
 	}
@@ -55,12 +55,15 @@ int main(int argc, char **argv)
 	handle("open", fd < 0);
 	file_size = atoi(argv[2]) * BLCKS_PER_MB; // WARNING : will fail silently in case of misuse.
 	
+	filename = argv[3];
+	setTimeout(atoi(argv[4])); // will fail silently
+
 	// Get block size from device driver.
-	retval = ioctl(fd, BLKGETSIZE, &numblocks);
-	handle("ioctl", retval == -1);
-	// File size cannot grow bigger than of the disk partition (~30GB).
-	if (file_size > numblocks) 
-		file_size = numblocks;
+//	retval = ioctl(fd, BLKGETSIZE, &numblocks);
+//	handle("ioctl", retval == -1);
+//	// File size cannot grow bigger than of the disk partition (~30GB).
+//	if (file_size > numblocks) 
+//		file_size = numblocks;
 	numblocks = file_size;
 	total_size = numblocks * getblocksize();
 

@@ -8,6 +8,6 @@ count = int(sys.argv[2])
 for i in xrange(count):
 	filename = "%s%d" % (name, i)
 	with open(filename, 'w') as f:
-		for j in xrange(4096):
+		for j in xrange(2**17):
 			f.write('12345678')
-			# File size is thus 16384 bytes (16kB).
+			# File size is thus 1MB

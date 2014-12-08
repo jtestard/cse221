@@ -25,5 +25,6 @@ void handle(const char *string, int error);
 unsigned long getblocksize();
 unsigned long getMegabyte();
 int getTimeout();
+void setTimeout(int t);
 
 #endif
