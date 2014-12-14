@@ -1,8 +1,11 @@
 /*
 * Measure Round Trip Time for the TCP protocol
 * 
-* RUN the following command on remote host for simple echo server:
-* ncat -l 2000 --keep-open --exec "/bin/cat"
+* RUN the following command on remote host port 7
+* for implementing echo service as defined by RFC 862:
+* ncat -l 7 --keep-open --exec "/bin/cat"
+* OR
+* ncat -l 7 --keep-open -c 'cat'
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,18 +101,6 @@ int inline GetElapsedTime(uint64_t *times) {
     remote_addr.sin_port = htons(RPORT);
     remote_addr.sin_addr = raddr;
 
-    if ((sock_fd = socket(remote.ai_family, remote.ai_socktype, remote.ai_protocol)) == -1) {
-        perror("[!] client: socket");
-        return 1;
-    }
-
-    /*fcntl(sock_fd, F_SETFL, O_NONBLOCK);*/
-
-    if (connect(sock_fd, (struct sockaddr *) &remote_addr, sizeof remote_addr) == -1) {
-        close(sock_fd);
-        perror("[!] client: connect");
-        return 1;
-    }
 
    /**************************************************
     * Setup Timing Harness 
@@ -139,11 +130,26 @@ int inline GetElapsedTime(uint64_t *times) {
                      "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
                      );
 
+
+        if ((sock_fd = socket(remote.ai_family, remote.ai_socktype, remote.ai_protocol)) == -1) {
+            perror("[!] client: socket");
+            return 1;
+        }
+
+
+        if (connect(sock_fd, (struct sockaddr *) &remote_addr, sizeof remote_addr) == -1) {
+            close(sock_fd);
+            perror("[!] client: connect");
+            return 1;
+        }
+
         /*********************************************
          * Send a packet and wait for reply/ack
          *********************************************/
         send(sock_fd, msg, len, 0);
         bytes_read = recv(sock_fd, buf, DATA_BYTES, 0);
+        printf("closing socket\n");
+        close(sock_fd);
 
         asm volatile (
                      "RDTSCP\n\t"
@@ -153,6 +159,7 @@ int inline GetElapsedTime(uint64_t *times) {
                      );
 
         if (bytes_read != DATA_BYTES) {
+            printf("[!] Dropped packets\n");
             i--;
             continue;
         }
@@ -164,6 +171,5 @@ int inline GetElapsedTime(uint64_t *times) {
     }
     
 
-    close(sock_fd);
     return 0;
 }
