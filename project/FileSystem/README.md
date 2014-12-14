@@ -59,3 +59,7 @@ To obtain the block size, we used the command : `blockdev --getbsz /dev/sda1`. W
 
 **Note :** For actual writeup, create a new report which follows the description shown
 in the T.A's comments.
+
+## Part 4 : Contention
+
+#### 
