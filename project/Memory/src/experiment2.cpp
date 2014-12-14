@@ -12,7 +12,7 @@ void exp_2() {
 	unsigned char* big_array2;
 	unsigned int memory_size = 162 * MEGABYTE; // L3 cache is 3MB. Array is size is 54 times size of L3 cache.
 	struct timespec ts_start,ts_end,test_of_time;
-	long unsigned time_taken, mb_per_sec;
+	long unsigned time_taken, mb_per_sec_r, mb_per_sec_w;
 	unsigned char* smallArray;
 	file = fopen(filename,"w");
 	if (!file) {
@@ -43,9 +43,8 @@ void exp_2() {
 	    
 	    test_of_time = diff(ts_start,ts_end);
 	    time_taken = test_of_time.tv_nsec;
-		mb_per_sec = (3000 * BILLION) / time_taken;
-	    cout << "read bandwith: " << mb_per_sec  << "mb/secs;"<< endl;
-	    fprintf(file,"%lu\n", mb_per_sec);
+		mb_per_sec_r = (3000 * BILLION) / time_taken;
+	    cout << "read bandwith: " << mb_per_sec_r  << "mb/secs; ";
 
 	    clock_gettime(CLOCK_REALTIME,&ts_start);
 	    #define ONE_WRITE memcpy(&big_array2[(rand()%54)*3*MEGABYTE], smallArray, 3 * MEGABYTE);
@@ -58,9 +57,9 @@ void exp_2() {
 	    
 	    test_of_time = diff(ts_start,ts_end);
 	    time_taken = test_of_time.tv_nsec;
-		mb_per_sec = (3000 * BILLION) / time_taken;
-	    cout << "write bandwith: " << mb_per_sec << "mb/secs;"<< endl;
-	    fprintf(file,"%lu\n", mb_per_sec);
+		mb_per_sec_w = (3000 * BILLION) / time_taken;
+	    cout << "write bandwith: " << mb_per_sec_w << "mb/secs;"<< endl;
+	    fprintf(file,"%lu %lu\n", mb_per_sec_r, mb_per_sec_w);
 
 	}
 	free(big_array1);
