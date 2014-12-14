@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define ITERATIONS 10
+#define ITERATIONS 100
 #define STACK_SIZE (1024 * 1024)
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE);} while (0)
@@ -20,7 +20,7 @@ unsigned int fibonacci (unsigned int n) {
 		return fibonacci(n-1) + fibonacci(n-2);
 }
 
-// Function run by the kernel thread
+// Function run by the user thread
 int process_fn(void* data) {
     unsigned int n = 30;
     fibonacci(n);
@@ -40,7 +40,7 @@ void inline GetElapsedTime(unsigned long  *times) {
 		clock_gettime(CLOCK_REALTIME,&ts_start);	
 
 		if ((pid = fork()) == 0) {
-			process_fn((void *) NULL);
+			// process_fn((void *) NULL);
 			exit(0);
 		}
 
@@ -73,13 +73,10 @@ int main( int argc, const char* argv[] ){
 
     for (i = 0; i < ITERATIONS; i++) {
         average_time += times[i];
-        printf("The elapsed time is: %lu\n", times[i]);
     }
 
     average_time /= ITERATIONS;
-    
-    printf("The average elapsed time is: %lu\n", average_time);
-    
+    printf("%lu\n", average_time);
     return 0;
 }
 

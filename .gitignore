@@ -19,3 +19,5 @@
 project/Memory/bin/*
 project/FileSystem/bin/*
 files
+sys_call
+process

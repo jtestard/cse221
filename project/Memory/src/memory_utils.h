@@ -19,6 +19,7 @@
 const unsigned int MEGABYTE = 1048576;
 const unsigned int KILOBYTE = 1024;
 const unsigned int ALLOC_SIZE = MEGABYTE/1024;
+const unsigned int REPEAT_COUNT = 1;
 /*
 Records difference in time between two timespec structures.
 */

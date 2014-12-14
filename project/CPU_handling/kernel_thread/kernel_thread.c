@@ -7,7 +7,7 @@
 #include <linux/kthread.h>  // for threads
 #include <linux/time.h> 
 #include <linux/timer.h>
-#define ITERATIONS 10
+#define ITERATIONS 100
 
 // Slow fibonacci function
 unsigned int fibonacci (unsigned int n) {
@@ -42,7 +42,6 @@ void inline GetElapsedTime(uint64_t *times) {
 
         thread = kthread_create(thread_fn,data,our_thread);
         if((thread)) {
-            printk(KERN_INFO "Kernel Thread Creation Successful!");
             wake_up_process(thread);
         }
  		kthread_stop(thread);
@@ -77,7 +76,6 @@ static int __init timebm_start(void)
 
     for (i = 0; i < ITERATIONS; i++) {
         average_time += times[i];
-        printk(KERN_CRIT "The elapsed time is: %llu\n", times[i]);
     }
 
     average_time /= ITERATIONS;

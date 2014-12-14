@@ -1,5 +1,4 @@
 #include "memory_utils.h"
-#define REPEAT_COUNT 1 
 
 
 struct timespec diff(struct timespec start, struct timespec end)
