@@ -17,8 +17,8 @@ then
 	rm sequential_access.csv
 fi
 
-# Section 4.2 (File reading)
-file_read() {
+# Section 4.1 (File Cache)
+file_cache() {
 	mkdir measurements/file_read
 	touch file_cache_size.csv
 	fcmodules=( 32 64 128 256 512 1024 2048 4096 8192 16384)
@@ -27,8 +27,10 @@ file_read() {
 		./bin/file_cache_size /dev/sda5 $i measurements/file_read/file_cache_size.csv 5
 		echo "==================================="
 	done
+}
 
-
+# Section 4.2 (File reading)
+file_read() {
 	touch random_access.csv
 	touch sequential_access.csv
 	modules=( 32 64 128 256 512 1024 2048 4096 8192 16384 )
@@ -41,7 +43,10 @@ file_read() {
 	done
 }
 
-
+# Section 4.3 (File reading on NFS)
+file_read_nfs() {
+	echo "Nothing here for the moment"
+}
 
 # Section 4.4 (Contention)
 contention() {
