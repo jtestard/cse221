@@ -17,6 +17,8 @@
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 \usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
 \usepackage{amssymb}
+\usepackage{dblfloatfix} % get tables to position at bottom of page
+\usepackage{fixltx2e} % fix out of order figures
 \newcommand{\footlabel}[2]{%
     \addtocounter{footnote}{1}%
     \footnotetext[\thefootnote]{%
@@ -63,5 +65,7 @@
 \begin{thebibliography}{9}
 \bibitem{intel}
     \url{http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/ia-32-ia-64-benchmark-code-execution-paper.pdf}
+\bibitem{rfc862}
+    \url{http://tools.ietf.org/html/rfc862}
 \end{thebibliography}
 \end{document}

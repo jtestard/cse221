@@ -1,0 +1,137 @@
+The setup for our networking experiments consisted of our local machine
+connected to a router and a remote machine connected to the same router over a
+100Mbps Ethernet network. See the machine description section for a description
+of the remote machine.
+
+\subsection{Round Trip Time (RTT)}
+
+\subsubsection{Estimation}
+
+Our estimation of RTT for TCP is based upon an empirically derived lower bound.
+The lower bound was determined by using the ping command to observe RTT for
+ICMP packets sending and receiving 56 bytes of data to a remote host and
+loopback. The overhead of TCP is greater than that of ICMP due to it being a
+connected protocol that requires handshaking to establish a connection,
+additional handshaking to close the connection, and a larger packet size.
+Therefore, the RTT using TCP should be no faster than a ping to the same host. 
+
+We observed that the average RTT for 1000 pings to the loopback were 0.033 and
+to the remote machine 0.955ms. Transmitting 56 bytes of data via TCP requires
+3.5 additional round trips because of connection overhead for the initial 3-way
+handshake and 4-way termination which consists of 7 packets that each travel
+one way.  We estimate the minimum RTT to loopback for an equivalent amount of
+data (56 bytes) via TCP to be $$4.5 * 0.033\text{ms} = 0.145\text{ms}.$$  
+
+The difference between the the ping time for loopback and to the remote machine
+represent the overhead of packets crossing the physical network. Therefore we
+estimate that the additional RTT for a single packet to the remote machine is
+$0.955\text{ms} - 0.033\text{ms} = 0.922\text{ms}$. Clearly, the overhead of
+crossing the physical network dominates the time to evaluate and send a packet
+at its destination and source machine. It follows from our estimation of the
+RTT to loopback that RTT to the remote machine for 56 bytes of data via TCP is
+calculated as $$4.5 * 0.033\text{ms} + 4.5 * 0.922\text{ms} = 4.294\text{ms}.$$
+
+\subsubsection{Methodology}
+
+The program which runs on the local machine sets up a TCP connection and sends
+a message to the remote machine. It waits for the message to return and then
+tears down the connection. Each timing iteration begins immediately before
+setup of the TCP connection and ends immediately after the connection is
+closed. The program initializes a character array of 56 elements (i.e. 56
+bytes) in order to perform an accurate comparison with ping which sends 56
+bytes of payload per packet.  We use the sockets library to obtain a file
+descriptor to a socket and then connect to the remote machine. We send to
+socket 7 in order to be consistent with RFC 862 \cite{rfc862} which sets the
+specification for an echo service. Once a connection is successful we send the
+56 byte message and then perform a blocking read which will wait for the
+message to return from the remote machine. After a message is recieved we close
+the TCP connection and stop timing. If the bytes read does not equal the bytes
+sent, the result is not recorded due to packets being dropped and the iteration
+is repeated until successful.
+
+In order to implement a simple echo service on the remote machine, we used the
+ncat program with the following command: 
+\begin{verbatim}
+ncat -l 7 --keep-open -c 'cat'
+\end{verbatim}
+The arguments to the command instruct the program to listen on port 7 for
+incoming tcp connections and echo the data by executing the cat program on the
+incoming data. The keep open parameter instructs ncat to continue listening for
+new connections once a remote connection closes.
+
+\subsubsection{Results}
+
+We used the timing methodology described earlier in this paper that reports the
+number of cycles elapsed between the start and end. We convert the cycle count
+to milliseconds as described in timing overhead section and present our results
+in table~\ref{table:rtt-results}.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+RTT Local (cycles) & RTT Local (ms) & RTT Remote (cycles) & RTT Remote (ms) \\ \hline
+3850916            & 1.572          & 30172312            & 12.315          \\ \hline
+\end{tabular}
+\caption{RTT experimental results}
+\label{table:rtt-results}
+\end{table*}
+
+\subsubsection{Analysis and Discussion}
+
+Our estimates for the remote case were off by a factor of 3 and an order of
+magnitude in the case of loopback. We realize that in our estimates we did not
+account for the fact that TCP would require an work done at an additonal layer
+of the TCP/IP stack versus the ICMP packet. This is due to ICMP being a network 
+layer protocol, the same as IP which encapsulates the ICMP packet, while TCP is 
+a transport layer protocol. The evaluation/formation of the TCP packet at the
+transport layer adds additional overhead that is missing in our estimate, but 
+represented in the experimental results. This overhead would be present in the 
+local and remote machine. The router that connects the two machines operates 
+at the network layer and would not contribute additional overhead versus ICMP 
+because it does not read TCP header information.
+
+Comparing the local and remote results reveals that the overhead of transmitting
+over a network dominates that of the OS overhead by an order of magnitude 
+even for machines connected to the same LAN.
+
+The network is rated at a maximum of 100Mbps. Our results show that we achieve in 
+the local case: $$\frac{(56*8)}{0.00157} * 10^{-6} = 0.296\text{Mbps}$$
+and in the remote case: $$\frac{(56*8)}{0.0123} * 10^{-6} = 0.0364\text{Mbps}.$$
+This is far below the maximum performance that the hardware is capable of because of
+ the software overheads that are required for reading and creating packet header information.
+Ultimately, it is the size of our payload that contributes most to the discrepency 
+in performance. The maximum transmission unit (MTU) for TCP is 1460 bytes, 
+however we are sending data in 56 byte chunks. The next experiment in peak bandwidth 
+will provide more reasonable results regarding the difference between ideal 
+hardware performance and real world performance over TCP.
+
+\subsection{Peak Bandwidth}
+
+We use the data collected in the previous experiment to assist us in
+deriving an estimate for peak bandwidth over TCP to a remote and local
+connection. We determined in the previous experiment that in order to 
+gain maximum throughput with TCP we would need each payload to be 
+equivalent to the MTU. The difference in throughput should increase 
+by a factor of $\frac{1460}{56} = 26.07$. We believe the OS overhead at the transport 
+layer of reading and forming packets will also increase due to the larger payload, but 
+this should have a negligable effect on our estimate due to the message buffer being 
+initialized to the size of MTU in advance. With this information we estimate that 
+peak bandwidth for the local case will be: $$0.297\text{Mbps} * 26.07 = 7.74\text{Mbps}$$
+and for the remote case: $$0.0364\text{Mbps} * 26.07 = 0.949\text{Mbps}$$.
+
+\subsubsection{Estimation}
+\subsubsection{Methodology}
+\subsubsection{Results}
+\subsubsection{Analysis and Discussion}
+\subsection{Connection Setup}
+\subsubsection{Estimation}
+\subsubsection{Methodology}
+\subsubsection{Results}
+\subsubsection{Analysis and Discussion}
+\subsection{Connection Teardown}
+\subsubsection{Estimation}
+\subsubsection{Methodology}
+\subsubsection{Results}
+\subsubsection{Analysis and Discussion}
+
+
