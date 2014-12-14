@@ -50,14 +50,14 @@ int main(void)
         loop_time = (times[i] - TIMING_OVERHEAD);
         results[i] = (int) loop_time;
 
-        printf("Iteration %d: RTT: %" PRIu64 " cycles\n", i, times[i]);
+        printf("Iteration %d: Teardown time: %" PRIu64 " cycles\n", i, times[i]);
     }
 
     qsort (results, ITERATIONS, sizeof(int), compare);
 
-    printf("[*] The median RTT is: %d cycles\n", results[ITERATIONS/2]);
-    printf("[*] The minimum RTT is: %d cycles\n", results[0]);
-    printf("[*] The maximum RTT is: %d cycles\n", results[ITERATIONS-1]);
+    printf("[*] The median Teardown time is: %d cycles\n", results[ITERATIONS/2]);
+    printf("[*] The minimum Teardown time is: %d cycles\n", results[0]);
+    printf("[*] The maximum Teardown time is: %d cycles\n", results[ITERATIONS-1]);
     
     return rv;
 }
@@ -138,6 +138,7 @@ int inline GetElapsedTime(uint64_t *times) {
         /*********************************************
          * Teardown the TCP connection.
          *********************************************/
+        printf("[!] closing socket\n");
 
         close(sock_fd);
 

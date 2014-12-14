@@ -1,11 +1,11 @@
 #include "custom_lib.h"
 unsigned long file_size;
+char* filename = NULL;
 
 void done()
 {
 	time_t end;
 	FILE *file;
-	char filename[] = "random_access.csv";
 
 	time(&end);
 
@@ -36,7 +36,6 @@ void done()
 // Does random seeking through the disk.
 int main(int argc, char **argv)
 {
-//	unsigned long getblocksize() = 4096;
 	int fd, retval;
 	unsigned long numblocks, BLCKS_PER_MB;
 	off64_t offset;
@@ -44,20 +43,24 @@ int main(int argc, char **argv)
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-	if (argc != 3) {
-		printf("Usage: random_seek <raw disk device> <fake_file_size_in_mb>\n");
+	if (argc != 5) {
+		printf("Usage: random_access <raw disk device> <fake_file_size_in_mb> <measurement_filename>\n");
 		exit(EXIT_SUCCESS);
 	}
 	// Open file with O_DIRECT, which will bypass file cache.
-	fd = open(argv[1], O_RDONLY | O_DIRECT );
+    fd = open(argv[1], O_RDONLY | O_DIRECT );
+	/*fd = open(argv[1], O_RDONLY);*/
 	handle("open", fd < 0);
 	file_size = atoi(argv[2]) * BLCKS_PER_MB; // WARNING : will fail silently in case of misuse.
-	
+	filename = argv[3];
+	setTimeout(atoi(argv[4])); // will fail silently
+
 	// Get block size from device driver.
-	retval = ioctl(fd, BLKGETSIZE, &numblocks);
-	handle("ioctl", retval == -1);
-	if (file_size > numblocks) 
-		file_size = numblocks;
+	// Removing guarantee.
+//	retval = ioctl(fd, BLKGETSIZE, &numblocks);
+//	handle("ioctl", retval == -1);
+//	if (file_size > numblocks) 
+//		file_size = numblocks;
 	numblocks = file_size; 
 
 	// Create buffer and handle alignment (required by O_DIRECT).
