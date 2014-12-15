@@ -75,6 +75,7 @@ int inline GetElapsedTime(uint64_t *times) {
    /**************************************************
     * Initialize structs for a TCP connection
     **************************************************/
+    int buff_size = BUFSIZE;
     int c_sock_fd, s_sock_fd, status, len;
     struct sockaddr_in server_addr, client_addr;
     char buf[INPUTBUFFERSIZE];
@@ -94,6 +95,8 @@ int inline GetElapsedTime(uint64_t *times) {
         perror("[!] Server: socket");
         return 1;
     }
+
+    setsockopt(s_sock_fd, SOL_SOCKET, SO_RCVBUF, &buff_size, (int)sizeof(buff_size));
 
     if (bind(s_sock_fd, (struct sockaddr *) &server_addr, 
                                             sizeof(server_addr)) < 0) {
