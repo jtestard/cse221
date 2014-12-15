@@ -1,5 +1,6 @@
-ITERATIONS=1000
-RADDR="192.168.1.74"
+ITERATIONS=100
+#RADDR="192.168.1.74"
+RADDR="127.0.01"
 RPORT="2000"
 
 all: setup_overhead teardown_overhead
