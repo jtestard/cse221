@@ -105,7 +105,7 @@ that the file read bandwidth over NFS will be 16Mbps.
 \subsubsection{Methodology}
 
 We configure an NFS server on the same remote machine that was used in the Network bencmarking experiments and share a directory containing a 5GB file. The nfs share is mounted on our local machine and a 
-modified version of the random access bandwidth experiment is performed. We modify the program for measuring the read bandwidth of random accesses so that O_DIRECT flag is not used. This was required because 
+modified version of the random access bandwidth experiment is performed. We modify the program for measuring the read bandwidth of random accesses so that O\_DIRECT flag is not used. This was required because 
 it is not supported for reading NFS shares. Random access was chosen over sequential reads in order to limit the effect of the file cache upon our results.
 
 \subsubsection{Results}

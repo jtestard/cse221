@@ -293,7 +293,7 @@ that performs 10,000 iterations. The elapsed time for a context switch is stored
 on each iteration and the median of all results is output as the final result in
 order to minimize the spurious results.
 
-\subsubsubsection{Process Context Switch} 
+\subsubsection{Process Context Switch specific methodology} 
 We use the fork system call in order to create the child process which will
 write to the pipe. We had a difficult time coming up with an estimate for the
 time to perform a context switch. Since context switches in Linux are primarily
@@ -301,7 +301,7 @@ performed in software we believe the time should be proportional to the latency
 in pushing all processor registers that must be saved to the kernel stack plus
 the cost of installing a new address space for the process that is going to be
 scheduled.
-\subsubsubsection{Thread Context Switch}
+\subsubsection{Thread Context Switch specific methodology}
 We use the clone system call with the CLONE\_VM flag set in order to create a
 thread which shares resources with the parent process. We faced the same
 difficulty in estimating the time of context switching between threads, but we
