@@ -8,5 +8,5 @@ for i in xrange(1,count + 1):
 		# Append file with id info
 		# os.system("echo \"%d %d \" >> %s/process[%d,%d].csv" % (i, j, path, i, j))
 		# Perform experiment
-		os.system("sudo ./bin/random_access %s%d 1 %s/process[%d,%d].csv 1&" %
+		os.system("sudo ./bin/random_access %s%d 16 %s/process[%d,%d].csv 10&" %
 		("files/file", j, path, i, j))

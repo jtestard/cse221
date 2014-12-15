@@ -52,21 +52,43 @@ Sequential access of a file is when we get the most out of the disk bandwidth. A
 
 \subsubsection{Methodology}
 
-In order to ensure we are reading from disk and not from the file cache, we use the Linux flag \texttt{O\_DIRECT}. The \texttt{O\_DIRECT} flag can be specified when making the \texttt{open} system call. If used, it guarantees all read and write system calls on the opened file descriptor will fetch data from disk. It uses 
+In order to ensure we are reading from disk and not from the file cache, we use the Linux flag \texttt{O\_DIRECT}. The \texttt{O\_DIRECT} flag can be specified when making the \texttt{open} system call. If used, it guarantees all read and write system calls on the opened file descriptor will fetch data from disk. We read from the \texttt{/dev/sda1} disk one MB at a time in a simple loop. We simulate different file sizes by setting a limit on the loop (called \texttt{total\_size}). When we reach the end of the loop we seek back to the beginning of the loop as follows : 
 
-To read randomly, we also read directly from the disk partition. We use the Linux lseek() command which reads at an offset of a file descriptor, as follows:
+\begin{lstlisting}
+if (total_read >= total_size) {
+  retval = lseek64
+     (fd, 0, SEEK_SET);
+  total_read = 0;
+  //...
+\end{lstlisting}
 
+where \texttt{total\_read} is the number of blocks read up to now in this iteration. To read blocks randomly, we also read directly from the disk partition. We use the \texttt{lseek} command which reads at an offset of a file descriptor, as follows:
+
+\begin{lstlisting}
 numblocks = SIZE_OF_FILE;
-offset = (off64_t) numblocks * random() / RAND_MAX;
-retval = lseek64(fd, BLOCKSIZE * offset, SEEK_SET);
-Where fd is the file seeked (in our case the disk partition), offset is the randomly chosen offset. SEEK_SET is an option which tells the lseek() command to start offsetting from the beginning of the file. Finally, we simulate files of varying size by changing the numblocks variable.
+offset = (off64_t) numblocks *
+  rand() / RAND_MAX;
+retval = lseek64(fd, BLOCKSIZE 
+  * offset, SEEK_SET);
+\end{lstlisting}
 
-To avoid the file system cache, we use O_DIRECT.
-
-To obtain the block size, we used the command : blockdev --getbsz /dev/sda1. We found it was 4096.
+where fd is the file seeked (in our case the disk partition), offset is the randomly chosen offset. \texttt{SEEK\_SET} is an option which tells the \texttt{lseek} command to start offsetting from the beginning of the file. Finally, we simulate files of varying size by changing the \texttt{numblocks} variable. To obtain the block size, we used a system command, \texttt{blockdev --getbsz /dev/sda1}; we found it was 4096. Notice we try to maximize bandwidth while reading truly randomly by seeking after each block read. If we read more than one block, than our read pattern would be partly sequential. If we read less, than we would not maximize our read bandwidth. Finally, in order to have good enough simulation we iterate continuously for 10 seconds and then measure the average time it takes to read one block into memory per millisecond.
 
 \subsubsection{Results}
 
+\begin{figure*}
+ \centering
+  \includegraphics[width=0.85\textwidth]{image/sequential_read.png}
+  \caption{Sequential Access Bandwidth}
+ \label{fig:sequential}
+\end{figure*}
+
+\begin{figure*}
+ \centering
+  \includegraphics[width=0.85\textwidth]{image/random_read.png}
+  \caption{Random Access Bandwidth}
+ \label{fig:random}
+\end{figure*}
 
 \subsubsection{Analysis}
 
@@ -117,5 +139,14 @@ not disabled due to reading files over NFS.
 \subsubsection{Methodology}
 
 \subsubsection{Results}
+
+\subsubsection{Results}
+
+\begin{figure*}
+ \centering
+  \includegraphics[width=0.85\textwidth]{image/contention.png}
+  \caption{Sequential Access Bandwidth}
+ \label{fig:contention}
+\end{figure*}
 
 \subsubsection{Analysis}
