@@ -1,1 +1,19 @@
-The goal of this project is to determine the performance characteristics of Richard's machine when running Ubuntu. We have made our experiments using C and assembly instructions without the help of external tools. The C compiler we have used is the gcc compiler (version 4.8.2). Optimization settings we have used for our compiler settings have varied across our measurements (more details in the paper).
+\begin{table*}[t]
+\centering
+\begin{tabular}{| c | c |}
+\hline
+Jules Testard & Richard Park \\
+\hline
+ Procedure call overhead & Measurement overhead \\
+System call overhead & Loop overhead \\
+Task creation time overhead & Context switch time overhead \\
+Entire Memory section & Entire Network section \\
+Disk bandwidth & Network Disk Bandwidth \\
+Disk Contention & File Cache Size \\
+\hline
+\end{tabular}
+\caption{Workload}
+\label{tab:workload}
+\end{table*}
+
+The goal of this project is to determine the performance characteristics of Richard's machine when running Ubuntu. We have made our experiments using C and assembly instructions without the help of external tools. The C compiler we have used is the gcc compiler (version 4.8.2). Optimization settings we have used for our compiler settings have varied across our measurements (more details in the paper). The workload for the project has been shared as shown in table [\ref{tab:workload}]. We estimate having spent each around 40 hours on the project, account for 80 hours total.

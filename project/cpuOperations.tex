@@ -22,7 +22,7 @@ The total overhead of our measuring mechanism is estimated to be 17 cycles.
 In order to accurately measure execution time we implemented a timing
 methodology that reads the hardware time-stamp counter before and after a
 procedure (by procedure here we mean lines of C or assembly code we wish to
-profile, not necessarily a procedure call).  The time-stemp is read immediately
+profile, not necessarily a procedure call).  The time-stamp is read immediately
 before the procedure is called and again after the procedure exits. The two
 output values correspond to the start and end times of the procedure being
 executed. The initial time is subtracted from the final time to calculate the
@@ -164,7 +164,7 @@ but in addition, they require "trapping" to the kernel. When a system call occur
 to kernel mode. The switch requires 1) flushing processor registers 2) dispatching execution
 to the proper kernel function 3) load the kernel state into the registers. Some systems calls have more complex requirements
 but since we concentrate on a "minimal" system calls, we will consider only those for now. We expect an
-overhead from 100's to 1000's of nanoseconds.
+overhead from high 100's to low 1000's of nanoseconds.
 
 \subsubsection{Methodology}
 
@@ -267,7 +267,6 @@ The results seem to match our expectations : when compared to regular processes,
 \subsection{Context Switch Time} 
 
 \subsubsection{Estimation}
-
 
 \subsubsection{Methodology}
 

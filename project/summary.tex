@@ -3,24 +3,29 @@ For summary of results see table~\ref{table:summaryresults}.
 \begin{table*}[b]
 \begin{tabular}{|l|l|l|l|l|}
 \hline
-\textbf{Operation}                                                 & \textbf{\begin{tabular}[c]{@{}l@{}}Base Hardware\\ Performance\end{tabular}} & \textbf{\begin{tabular}[c]{@{}l@{}}Estimated\\ Software\\ Performance\end{tabular}} & \textbf{\begin{tabular}[c]{@{}l@{}}Predicted\\ Time\end{tabular}} & \textbf{Measured Time} \\ \hline
-Measurement                                                        &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-Loops                                                              &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-Procedure Call                                                     &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-System Call                                                        &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-Task Creation                                                      &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-\begin{tabular}[c]{@{}l@{}}Context Switch\\ (Process)\end{tabular} &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-\begin{tabular}[c]{@{}l@{}}Context Switch\\ (Thread)\end{tabular}  &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-RAM Access Time                                                    &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-RAM Bandwidth                                                      &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-\begin{tabular}[c]{@{}l@{}}Page Fault \\ service time\end{tabular} &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-RTT                                                                &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-Peak Bandwidth                                                     & 100Mbps                                                                      &                                                                                     &                                                                   &                        \\ \hline
-\begin{tabular}[c]{@{}l@{}}Connection\\ Overhead\end{tabular}      &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-File Cache Size                                                    &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-File Read Time                                                     &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-\begin{tabular}[c]{@{}l@{}}Remote File Read\\ Time\end{tabular}    &                                                                              &                                                                                     &                                                                   &                        \\ \hline
-Contention                                                         &                                                                              &                                                                                     &                                                                   &                        \\ \hline
+\textbf{Operation}       & \textbf{\begin{tabular}[c]{@{}l@{}}Base Hardware\\ Performance\end{tabular}} & \textbf{\begin{tabular}[c]{@{}l@{}}Estimated\\ Software\\ Performance\end{tabular}} & \textbf{\begin{tabular}[c]{@{}l@{}}Predicted\\ Time\end{tabular}} & \textbf{Measured Time} \\ \hline
+Measurement         &          &      &        &       \\ \hline
+Loops               &          &      &        &       \\ \hline
+Procedure Call & 10-50 ns &  & 10-50 ns & 27ns  \\ \hline
+System Call & 500-2000ns & 500-2000ns &  1000-4000ns  &  2500ns  \\ \hline
+Process Creation  & 30-60us    &    50-100us  &   80-160 us  &  130us             \\ \hline
+Kernel Thread Creation    &     20-40us     &  40-80 us &  60-100us   &   74us    \\ \hline
+\begin{tabular}[c]{@{}l@{}}Context Switch\\ (Process)\end{tabular} &          &      &        &       \\ \hline
+\begin{tabular}[c]{@{}l@{}}Context Switch\\ (Thread)\end{tabular}  &          &      &        &       \\ \hline
+RAM Access Time  (L1)   &    5 ns/load     &     &    5 ns/load    &  4-7 ns/load  \\ \hline
+RAM Access Time  (L2)   &    10 ns/load     &    &   10 ns/load    &   10-20ns/load    \\ \hline
+RAM Access Time  (RAM)   &  50-100  ns/load     &     &  50-100 ns/load    &    30-150ns/load   \\ \hline
+RAM Bandwidth (memcpy)      &  1 sec/10GB  &  1 sec/10GB (overhead) &    $\simeq$ 5GB/sec    &   4800-5000 MB/sec    \\ \hline
+\begin{tabular}[c]{@{}l@{}}Page Fault \\ service time\end{tabular} &     1000 us     &      &   1000us     &  1213us (median)     \\ \hline
+RTT     &          &      &        &       \\ \hline
+Peak Bandwidth      & 100Mbps      &      &        &       \\ \hline
+\begin{tabular}[c]{@{}l@{}}Connection\\ Overhead\end{tabular}      &          &      &        &       \\ \hline
+File Cache Size     &          &      &        &       \\ \hline
+File Read Time (sequential)     &    0.0075 ms/block      &   minimal   &   0.0075 ms/block     &  0.009 ms/block     \\ \hline
+File Read Time (random)     &      < 0.1 ms/block   &   minimal   &    < 0.1 ms/block     &  0.3 ms/block    \\ \hline
+\begin{tabular}[c]{@{}l@{}}Remote File Read\\ Time\end{tabular}    &          &      &        &       \\ \hline
+Contention    (1 process)      &    0.2 block/msec     &   not applicable   &   0.2 block/msec  &   0.2 block/msec     \\ \hline
+Contention    (20 processes)      &    4 block/msec     &   not applicable   &   4 block/msec    &   2 block/msec     \\ \hline
 \end{tabular}
 \caption{Summary of Results}
 \label{table:summaryresults}
