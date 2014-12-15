@@ -148,7 +148,7 @@ to the proper kernel function 3) load the kernel state into the registers. Some 
 but since we concentrate on a "minimal" system calls, we will consider only those for now. We expect an
 overhead from 100's to 1000's of nanoseconds.
 
-\subsection{Methodology}
+\subsubsection{Methodology}
 
 The first problem that we encountered was to select an appropriate "minimal" system call. We decide to
 go for a user-defined system call \texttt{SIG\_USR1}. \texttt{SIG\_USR1} traps to the kernel but returns control
@@ -164,33 +164,87 @@ invoke the system call :
 
 $$ \texttt{kill(get\_pid(), SIGUSR1);}$$
 
-Again, the methodology in this case is quite simple : we measure the time in nanoseconds
-right before the system call, make the system call and measure the time again
-as the first instruction of the procedure (then take the difference). However, there are some trickiness we need to take
-into account. The procedure instructions initially live in memory, and we don't want to be
-measuring memory access time to fetch those instructions. This is why we ignore the 
-first measurement. After that, the instructions are expected to live in the cache. We do
-not take into account time to load data from caches. In total, we do a 100 measurements
-and take the average of all those measurements minus the first.
+When notified, the kernel will transfer execution control back to the current process
+but will move the instruction pointer to the beginning of the \texttt{signal\_handler} function.
+Notice that we are here performing twice the process described in the estimation section
+(going to kernel mode and back). Therefore, we will divide by two our timing results.
 
-\subsection{Task Creation Time}
+\subsubsection{Results}
 
-In order to compare the execution time of a kernel thread and a process, we
-setup a (slow) fibonacci function which would be the only thing the kernel
-thread or process would execute.
+After averaging over 100 runs, we obtained a timing an average of 5427 nanoseconds.
+The last three significant digits across runs but the first stays fairly stable. We will thus
+say that our system call has an overhead of about 2.5 microseconds (after dividing by 
+two as described above). 
 
-We were able to profile kernel threads using our methodology. The procedure
-between the two hardware counters simply creates a kernel thread which runs the
-fibonacci function waits for that thread to complete. The average time spent by
-the thread was 32264 cycles.
+\subsubsection{Analysis of Results}
 
-While kernel threads can be measured using our methodology, processes cannot be
-created with a kernel module, since there is no fork or exec call in the linux
-kernel API. As such for this task, we had to go out of kernel mode and write a
-user program at the possible cost of loss of precision (however, this gave us
-the opportunity to shut down compiler optimizations!). This time, we use a linux
-\texttt{clone()} system call and had the child process execute the fibonacci
-function. Measurements available soon.
+We had the luxury of being able to compare our results with those of LMBench [\ref{lmbench}].
+The LMBench authors measured an overhead of 4 microseconds, but had machines that
+were slower than ours. The results are slightly higher than our prediction but still reasonable.
+
+\subsection{Kernel Thread and Process Creation Time}
+
+Kernel thread and process creation were given in the same subsection in the project
+specification, therefore we will consider them together.
+
+\subsubsection{Estimation}
+
+Process creation process is the most complicated process we have seen so far. Given we are
+using Unix, note that we are measuring the overhead of \emph{forking} a process rather than
+\emph{creating} it. We consider only forking from a single-threaded process. Forking requires 1) setting the thread table for the
+process and setting the process descriptor and pid 3) allocating a new address space for the process
+4) copying the state of the forking process to the forked one 5) creating a call stack and instruction pointer 
+for the process thread. We expect the overall process to be quite expensive, in the order of hundreds of 
+microseconds. Note though that some of the steps described above may be processed lazily, as we have 
+seen in class (in particular copying the parent state over to the child). 
+
+A Kernel thread (despite its name), is a lot more similar to a process than to a thread in the context of 
+a multi-threaded program we have seen in class. In particular, Linux tends to consider threads as "just another process".
+Yet the kernel thread creation time should still be a little shorter that the process forking time because :
+
+\begin{itemize}
+\item{Kernel Threads are created in kernel space, whereas forking is executed from user space through a system call.}
+\item{Kernel Threads cannot have "threads of their own", removing the need for a thread table.}
+\item{Kernel Threads do not share memory with their parent.}
+\end{itemize} 
+
+\subsection{Methodology}
+
+Kernel thread creation and process creation profiling happens very differently. We evaluate process creation
+within a user process in which we make a first time measurement before executing the fork system call, and 
+have the first instruction within the child process be our second time measurement :
+
+\begin{lstlisting}
+clock_gettime(&ts_start);	
+if ((pid = fork()) == 0) {
+	clock_gettime(&ts_end);
+	//...
+\end{lstlisting}
+
+Since state is copied across forked processes, the value of the time computed in the parent is available to the 
+child. The kernel thread creation happens within a kernel module using the Linux \texttt{kthread\_create} kernel
+function. We make our first time measurement right before the kernel function call. However, the state of the parent isn't copied with kernel threads. As a workaround we used the void pointer provided by the kernel function to pass the time measured.
+Once in the kernel thread we measure the time again and take the difference.
+
+\begin{lstlisting}
+// In parent process
+clock_gettime(&ts_start);	
+void* data = &ts_start;
+thread = kthread_create
+   (thread_fn,data,...);
+// In kernel thread
+int thread_fn(void* data)
+struct timespec ts_start =
+   *((struct timespec*)data);
+\end{lstlisting}
+
+\subsubsection{Results}
+
+In both cases, we did this experiment 100 times then took the average. We found an average creation time of  73.4 microseconds for kernel threads and 130 microseconds for forking a user process.
+
+\subsubsection{Analysis of Results}
+
+The results seem to match our expectations : when compared to regular processes, kernel threads are twice faster to create, but they are still very expensive. We also have the opportunity to compare our results with those of LMBench. We notice that we record a process creation time twice short than the fast found in the LMBench survey. We can find two explanations for this : 1) our hardware is faster than theirs 2) we record only the time to execute the fork, not the time to execute the exit.
 
 \subsection{Context Switch Time} 
 
