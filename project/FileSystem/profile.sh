@@ -45,7 +45,15 @@ file_read() {
 
 # Section 4.3 (File reading on NFS)
 file_read_nfs() {
-	echo "Nothing here for the moment"
+	touch nfs_access.csv
+	modules=( 32 64 128 256 512 1024 2048 4096 8192 16384 )
+	for i in "${modules[@]}"; do
+		#echo "NFS sequential access (file size $i MB)"
+		#sudo ./bin/sequential_access /mnt/workstation $i measurements/file_read/nfs_access.csv 5
+		echo "NFS Random access (file size $i MB)"
+		sudo ./bin/nfs_random_access /home/rmp/share_cse221/bigfile1 $i measurements/file_read/nfs_access.csv 5
+		echo "==================================="
+	done
 }
 
 # Section 4.4 (Contention)
@@ -57,7 +65,9 @@ contention() {
 	rm -rf files
 }
 
-file_read
-contention
+#file_cache
+#file_read
+file_read_nfs
+#contention
 
 make clean
