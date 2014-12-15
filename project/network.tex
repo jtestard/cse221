@@ -3,6 +3,12 @@ connected to a router and a remote machine connected to the same router over a
 100Mbps Ethernet network. See the machine description section for a description
 of the remote machine.
 
+The source code for the programs that implement our experiments make use of the
+linux sockets api. The relevent data structures are initialized for TCP connections.
+We use the socket() call to request a socket file descriptor,
+connect() to initiate a TCP connection, send() to send data, and recv() to receive
+ data. The close() call terminates the TCP connection.
+
 \subsection{Round Trip Time (RTT)}
 
 \subsubsection{Estimation}
@@ -173,15 +179,55 @@ maximum performance. Since the local peak bandwidth experiment indicates that so
 bottleneck we must conclude that the bulk of the overhead resides in hardware at the link layer and
 physical ethernet connection. 
 
-\subsection{Connection Setup}
-\subsubsection{Estimation}
-\subsubsection{Methodology}
-\subsubsection{Results}
-\subsubsection{Analysis and Discussion}
-\subsection{Connection Teardown}
-\subsubsection{Estimation}
-\subsubsection{Methodology}
-\subsubsection{Results}
-\subsubsection{Analysis and Discussion}
+\subsection{Connection Setup and Teardown}
 
+\subsubsection{Estimation}
+We use our experimental results from RTT to assist us in estimating the connection teardown and setup
+overhead. We determine the estimate for sending a single packet by dividing the result from RTT by the number of packets for the 3-way handshake connection, 4-way handshake termination, and 2-ways for roundtrip of data. This should total 9 packets. It follows that, for the local case the time to send and receive a single packet is approximately $\frac{1.572\text{ms}}{9} = 0.175\text{ms}$ and for the remote case $\frac{12.315\text{ms}}{9} = 1.368\text{ms}$. Our estimates are show in table~\ref{table:connection-estimates} and were calculated by multiplying the number of packets required to perform connection (3) or teardown (4) by the time to send and receive a single packet.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+Setup Local(ms) & Setup Remote (ms) & Teardown Local (ms) & Teardown Remote (ms)\\ \hline
+0.525            & 0.700          & 4.104            & 5.472          \\ \hline
+\end{tabular}
+\caption{Estimates for TCP connection setup and teardown overhead}
+\label{table:connection-estimates}
+\end{table*}
+
+\subsubsection{Methodology}
+The programs for determining are identical except for where the timing begins and ends. The programs 
+request a socket, connect to the socket, and then close the socket. For measuring connection time we
+begin timing before the request for a socket and end after a connection.  For measuring teardown time
+ we begin timing after the connection is established and after the connection is closed. The 
+ procedure is repeated for 1000 iterations and the median value is reported as the result.
+
+ On the remote end we utilize the ncat program to setup a simple server that binds to port 2000 and listens for incoming connections with the following command:
+ \begin{verbatim}
+ ncat -l 2000 --keep-open
+ \end{verbatim}
+\subsubsection{Results}
+Due to our timing methodology, both programs report results in terms of elapsed cycles. We convert this to milliseconds by dividing by the clock frequency reported in the machine description of this report.
+The results are show in table~\ref{table:connection-results}.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+Setup Local(ms) & Setup Remote (ms) & Teardown Local (ms) & Teardown Remote (ms)\\ \hline
+0.149            & 0.983          & 0.315            & 0.014         \\ \hline
+\end{tabular}
+\caption{Experimental results for TCP connection setup and teardown overhead}
+\label{table:connection-results}
+\end{table*}
+
+\subsubsection{Analysis and Discussion}
+In general, we overestimated the overhead of both setup and teardown. An interesting result is 
+that the teardown time is much longer in the local case than in the remote case. We assumed that a 
+call to close() would send the packets required for the 4-way termination handshake. When we looked 
+into this further we learned that close() deallocates the socket file descriptor and any file 
+descriptors associated with pipes or FIFO. The local case taking much longer to close may be due to 
+additional pipes that facilitate the connection to the ncat server running in another process.
+This also explains why our initial estimate that teardown time would exceed setup time is invalid.
+The additional time to setup a TCP connection in the local case is likely due to the extra overhead 
+of inter process communication with the ncat server.
 
