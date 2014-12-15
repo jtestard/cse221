@@ -36,9 +36,9 @@ file_read() {
 	modules=( 32 64 128 256 512 1024 2048 4096 8192 16384 )
 	for i in "${modules[@]}"; do
 		echo "Sequential access (file size $i MB)"
-		sudo ./bin/sequential_access /dev/sda5 $i measurements/file_read/random_access.csv 5
+		sudo ./bin/sequential_access /dev/sda5 $i measurements/file_read/sequential_access.csv 5
 		echo "Random access (file size $i MB)"
-		sudo ./bin/random_access /dev/sda5 $i measurements/file_read/sequential_access.csv 5
+		sudo ./bin/random_access /dev/sda5 $i measurements/file_read/random_access.csv 5
 		echo "==================================="
 	done
 }
@@ -57,7 +57,7 @@ contention() {
 	rm -rf files
 }
 
-file_read
+#file_read
 contention
 
 make clean
