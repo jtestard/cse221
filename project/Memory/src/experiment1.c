@@ -31,7 +31,7 @@ void memory_latency(unsigned long size, unsigned long iterations, unsigned long 
 	char** array = (char **) malloc(sizeof(char*) * size);
 	for (k = 0; k < size; k++) {
 	    // Randomize to avoid cache prefetch effects
-		array[k] = (char*) &array[(k+rand()%stride_size)%size];
+		array[k] = (char*) &array[(k/stride_size)*stride_size+rand()%stride_size)%size];
 //		array[k] = (char*) &array[(k+rand()%size)%size];
 	}
 	p = array;
