@@ -82,16 +82,96 @@ time.
 
 \subsection{Procedure call overhead}
 
-Here as well, we had to be careful about compiler optimizations. Again we used
-the \texttt{rand()} function. The procedures we profile makes a unique call to
-the rand() function and returns (and never uses any of its arguments). We create
-eight such procedures (with 0 to 7 arguments).
+\subsubsection{Estimation}
 
-Using our methodology, we measured the average time required for a single call
-to the \texttt{rand()} function and each of our eight procedures (and compute
-the difference). Measurements available soon.
+When a call instruction is invoked, the CPU has to do the following operations to
+ensure that the call procedure execution happens smoothly : 1) push the returning
+address and the call arguments on the call stack 2) move the instruction pointer to
+the called function location. These operations require moving values around registers
+but nothing else "fancy" needs to happen. Therefore, we can expect the overhead to
+be in the order of tens of 10's nanoseconds.
+
+\subsubsection{Methodology}
+
+The methodology in this case is quite simple : we measure the time in nanoseconds
+right before the procedure call, make the procedure call and measure the time again
+as the first instruction of the procedure (then take the difference). However, there are some trickiness we need to take
+into account. The procedure instructions initially live in memory, and we don't want to be
+measuring memory access time to fetch those instructions. This is why we ignore the 
+first measurement. After that, the instructions are expected to live in the cache. We do
+not take into account time to load data from caches. In total, we do a 100 measurements
+and take the average of all those measurements minus the first.
+
+We created eight functions with zero to seven arguments. Each argument is \texttt{char} with one
+a one byte length. The arguments themselves are not used
+by the function. We do not know of compiler optimizations which remove unused argument from
+functions, but if this is the case, then our implementation does not account for it. As a safety 
+precaution, we added the \texttt{-O0} flag to our compiler to avoid optimization.
+
+\subsubsection{Results}
+
+Results are given in this table in nanoseconds. Note that unless otherwise specified, we
+use the \texttt{clock\_gettime()} linux procedure to obtain time information with nanosecond
+precision. It is considered as reliable by software industry [\ref{linux_time}].
+
+\begin{center}
+\begin{tabular}{| c | c | }
+\hline 
+Number of Arguments & Latency in ns \\
+\hline
+0 & 26 \\
+1 & 26 \\
+2 & 26 \\
+3 & 26 \\
+4 & 27 \\
+5 & 27 \\
+6 & 27 \\
+7 & 28 \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Analysis}
+
+We see that our estimation order of magnitude was correct. When it comes to the overhead of adding
+an argument it seems minimal at best. However all our arguments are small (one byte long). 
+Future work could go towards measuring overhead of larger arguments.
 
 \subsection{System call overhead}
+
+\subsubsection{Estimation}
+
+System call are more involved than procedure calls. They also require setting the same information on the call stack,
+but in addition, they require "trapping" to the kernel. When a system call occurs, the kernel is notified and a switch
+to kernel mode. The switch requires 1) flushing processor registers 2) dispatching execution
+to the proper kernel function 3) load the kernel state into the registers. Some systems calls have more complex requirements
+but since we concentrate on a "minimal" system calls, we will consider only those for now. We expect an
+overhead from 100's to 1000's of nanoseconds.
+
+\subsection{Methodology}
+
+The first problem that we encountered was to select an appropriate "minimal" system call. We decide to
+go for a user-defined system call \texttt{SIG\_USR1}. \texttt{SIG\_USR1} traps to the kernel but returns control
+to a (potentially different) user defined immediately afterwards. It is generally used to provide signal based
+communication between processes. We however use it within a single process.
+
+In our implementation, we first register a handler function with the signal as follows :
+
+$$ \texttt{signal(SIGUSR1, signal\_handler);}$$
+
+Immediately after making our first time measurement, we issue a kill command to
+invoke the system call :
+
+$$ \texttt{kill(get\_pid(), SIGUSR1);}$$
+
+Again, the methodology in this case is quite simple : we measure the time in nanoseconds
+right before the system call, make the system call and measure the time again
+as the first instruction of the procedure (then take the difference). However, there are some trickiness we need to take
+into account. The procedure instructions initially live in memory, and we don't want to be
+measuring memory access time to fetch those instructions. This is why we ignore the 
+first measurement. After that, the instructions are expected to live in the cache. We do
+not take into account time to load data from caches. In total, we do a 100 measurements
+and take the average of all those measurements minus the first.
 
 \subsection{Task Creation Time}
 
