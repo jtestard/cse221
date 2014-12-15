@@ -4,47 +4,28 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define ITERATIONS 100
 #define STACK_SIZE (1024 * 1024)
+#define ITERATIONS 1
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE);} while (0)
 struct timespec diff(struct timespec start, struct timespec end);
-
-// Slow fibonacci function
-unsigned int fibonacci (unsigned int n) {
-	if ( n == 0)
-		return 0;
-	else if ( n == 1)
-		return 1;
-	else
-		return fibonacci(n-1) + fibonacci(n-2);
-}
-
-// Function run by the user thread
-int process_fn(void* data) {
-    unsigned int n = 30;
-//    fibonacci(n);
-    return 0;
-}
 
 void inline GetElapsedTime(unsigned long  *times) {
     int i;
 	struct timespec ts_start,ts_end,test_of_time;
 
     for (i = 0; i < ITERATIONS; i++) {
-	    // Data required for thread creation.
 		pid_t pid;
 
-		//Not disabling preemption in order to make meaningful comparison.
-		//Read time
 		clock_gettime(CLOCK_REALTIME,&ts_start);	
 
 		if ((pid = fork()) == 0) {
-			// process_fn((void *) NULL);
+			clock_gettime(CLOCK_REALTIME,&ts_end);
+			test_of_time = diff(ts_start,ts_end);
+    		printf("%lu\n", test_of_time.tv_nsec);
 			exit(0);
 		}
 
-		//Read time
 		clock_gettime(CLOCK_REALTIME,&ts_end);	
         
 		test_of_time = diff(ts_start,ts_end);
@@ -76,7 +57,6 @@ int main( int argc, const char* argv[] ){
     }
 
     average_time /= ITERATIONS;
-    printf("%lu\n", average_time);
     return 0;
 }
 
