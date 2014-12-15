@@ -23,7 +23,7 @@ unsigned int fibonacci (unsigned int n) {
 // Function run by the user thread
 int process_fn(void* data) {
     unsigned int n = 30;
-    fibonacci(n);
+//    fibonacci(n);
     return 0;
 }
 
