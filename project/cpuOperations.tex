@@ -268,6 +268,22 @@ The results seem to match our expectations : when compared to regular processes,
 
 \subsubsection{Estimation}
 
+We had a difficult time coming up with an estimate for the time to perform a
+context switch. Since context switches in Linux are primarily performed in
+software we believe the time should be proportional to the latency in pushing
+all processor registers that must be saved to the kernel stack. We believe that 
+the context switch time should be at least half the time for performing process 
+creation. This is based upon our understanding that loading a process into the 
+address space will incur the overhead of reading from disk which will be at 
+least a couple orders of magnitude slower than reading/writing registers.
+
+We faced the same difficulty in estimating the time of context switching
+between threads, but we can state with confidence that it should be at least an
+half that of the time taken to perform a context switch between
+processes because the address space is shared. We believe this to be the case 
+because threads share the memory space and avoid repopulating many of the data 
+structures which are required for its bookeeping.
+
 \subsubsection{Methodology}
 
 In order to measure the time taken for a context switch to occur, we implemented
@@ -294,30 +310,30 @@ order to minimize the spurious results.
 
 \subsubsection{Process Context Switch specific methodology} 
 We use the fork system call in order to create the child process which will
-write to the pipe. We had a difficult time coming up with an estimate for the
-time to perform a context switch. Since context switches in Linux are primarily
-performed in software we believe the time should be proportional to the latency
-in pushing all processor registers that must be saved to the kernel stack plus
-the cost of installing a new address space for the process that is going to be
-scheduled.
+write to the pipe. The code which records the start time of timing is placed 
+after the fork system call in the parent process and immediately before it blocks
+ to read the pipe. This was important in order to avoid including the overhead of 
+ creating a new process in our timing results.
+
 \subsubsection{Thread Context Switch specific methodology}
 We use the clone system call with the CLONE\_VM flag set in order to create a
-thread which shares resources with the parent process. We faced the same
-difficulty in estimating the time of context switching between threads, but we
-can state with confidence that it should be at least an order of magnitude less
-that the time taken to perform a context switch between processes because the
-address space is shared.
+thread which shares resources with the parent process. 
+
 \subsubsection{Result}
 
 Our experimental results show that the median time to perform a process context
-switch is 180,566 cycles which is approximately equal to 72 micro seconds on the
-2.5GHz test machine. 
-
+switch is 80,680 cycles which is approximately equal to 32.9 micro seconds on the
+2.45GHz test machine. 
 
 Our experimental results show that the median time to perform a thread context
 switch is 38,566 cycles which is approximately equal to 15 micro seconds on the
-2.5GHz test machine.
+2.45GHz test machine.
 
 \subsubsection{Analysis}
 
+Our results show that the estimate for a process context switch was reasonably 
+accurate. We overestimated the performance gain of thread context switches. The 
+estimate was that they would be an order of magnitude faster, but they ended up
+ being roughly half as fast. Nevertheless, threads are clearly lighter in weight 
+ that processes in terms of overhead.
 

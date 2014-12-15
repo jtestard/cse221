@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	}
 	// Open file with O_DIRECT, which will bypass file cache.
     fd = open(argv[1], O_RDONLY | O_DIRECT );
-	/*fd = open(argv[1], O_RDONLY);*/
+    /*fd = open(argv[1], O_RDONLY);*/
 	handle("open", fd < 0);
 	file_size = atoi(argv[2]) * BLCKS_PER_MB; // WARNING : will fail silently in case of misuse.
 	filename = argv[3];
