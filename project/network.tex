@@ -3,6 +3,12 @@ connected to a router and a remote machine connected to the same router over a
 100Mbps Ethernet network. See the machine description section for a description
 of the remote machine.
 
+The source code for the programs that implement our experiments make use of the
+linux sockets api. The relevent data structures are initialized for TCP connections.
+We use the socket() call to request a socket file descriptor,
+connect() to initiate a TCP connection, send() to send data, and recv() to receive
+ data. The close() call terminates the TCP connection.
+
 \subsection{Round Trip Time (RTT)}
 
 \subsubsection{Estimation}
@@ -107,6 +113,8 @@ hardware performance and real world performance over TCP.
 
 \subsection{Peak Bandwidth}
 
+\subsubsection{Estimation}
+
 We use the data collected in the previous experiment to assist us in
 deriving an estimate for peak bandwidth over TCP to a remote and local
 connection. We determined in the previous experiment that in order to 
@@ -119,19 +127,107 @@ initialized to the size of MTU in advance. With this information we estimate tha
 peak bandwidth for the local case will be: $$0.297\text{Mbps} * 26.07 = 7.74\text{Mbps}$$
 and for the remote case: $$0.0364\text{Mbps} * 26.07 = 0.949\text{Mbps}$$.
 
-\subsubsection{Estimation}
 \subsubsection{Methodology}
-\subsubsection{Results}
-\subsubsection{Analysis and Discussion}
-\subsection{Connection Setup}
-\subsubsection{Estimation}
-\subsubsection{Methodology}
-\subsubsection{Results}
-\subsubsection{Analysis and Discussion}
-\subsection{Connection Teardown}
-\subsubsection{Estimation}
-\subsubsection{Methodology}
-\subsubsection{Results}
-\subsubsection{Analysis and Discussion}
 
+We create two programs for this experiment: a writer program that connects via
+tcp to a remote server and sends data to the server; a reader program which
+implements a server that is listening for incoming tcp connections, reads data,
+and performs timing.
+
+The writer program initializes a character array that is 5MB in size. 
+A socket is initialized and the socket send buffer is set to 1MB in size \cite{lmbench}. 
+The writer connects to the remote server that is running the reader program and begins timing. 
+The 5MB message is sent. If the entire message is sent successfully timing is stopped and 
+the socket is closed, otherwise we discard this iteration and start over. 
+We iterate this process 100 times and select the median result.
+
+The reader program implements a server that listens for a connection and reads in data.
+It begins by initializing a socket and setting its receive buffer to 1MB in size \cite{lmbench}.
+After binding to the socket, it blocks while listening for an incoming connection. Timing begins
+once an incoming connection is accepted. It then begins to receive the message into an input buffer.
+Once the entire message has been recieved, timing is stopped and the connection from the client is
+closed. At this point the server is ready for a new incoming connection.
+
+\subsubsection{Results}
+The results from this experiment are tabulated below. The reader program outputs the result in bytes per cycle (Bpc). This value is converted to megabits per second (MBps) using the clock period established in the timing section of this report. We present our results in table~\ref{table:peak-results}.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+Peak BW Local (Bpc) & Peak BW Local (Mbps) & Peak BW Remote (Bpc) & Peak BW Remote (MBps) \\ \hline
+0.1381            & 2707          & 0.0008            & 16          \\ \hline
+\end{tabular}
+\caption{Peak bandwidth experimental results}
+\label{table:peak-results}
+\end{table*}
+
+\subsubsection{Analysis and Discussion}
+According to our experimental results, our estimates vastly underestimated the peak bandwidth of TCP.
+In this experiment the initialization handshake and termination handshake of TCP are left out of the timing loop. This leads us to conclude that once a connection is established data transfer over TCP 
+proceeds with a much lower overhead. Since we did not account for this, we under estimated the peak
+bandwidth.
+
+The difference between peak bandwith for the local and remote cases illustrates that the latency of 
+transmitting over the network dominates the OS overhead when transferring data over TCP. The local 
+peak bandwith exceeds the 100Mpbs capability of our ethernet network because the data never reaches
+the ethernet portion i.e. the writer program send the data down the TCP/IP stack and the reader 
+program which is running in a separate process receives the data and sends it up the TCP/IP stack via
+ a software pipe. 
+
+The remote peak bandwith results show that the we are achieving less than 20\% of the hardwares 
+maximum performance. Since the local peak bandwidth experiment indicates that software is not the 
+bottleneck we must conclude that the bulk of the overhead resides in hardware at the link layer and
+physical ethernet connection. 
+
+\subsection{Connection Setup and Teardown}
+
+\subsubsection{Estimation}
+We use our experimental results from RTT to assist us in estimating the connection teardown and setup
+overhead. We determine the estimate for sending a single packet by dividing the result from RTT by the number of packets for the 3-way handshake connection, 4-way handshake termination, and 2-ways for roundtrip of data. This should total 9 packets. It follows that, for the local case the time to send and receive a single packet is approximately $\frac{1.572\text{ms}}{9} = 0.175\text{ms}$ and for the remote case $\frac{12.315\text{ms}}{9} = 1.368\text{ms}$. Our estimates are show in table~\ref{table:connection-estimates} and were calculated by multiplying the number of packets required to perform connection (3) or teardown (4) by the time to send and receive a single packet.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+Setup Local(ms) & Setup Remote (ms) & Teardown Local (ms) & Teardown Remote (ms)\\ \hline
+0.525            & 0.700          & 4.104            & 5.472          \\ \hline
+\end{tabular}
+\caption{Estimates for TCP connection setup and teardown overhead}
+\label{table:connection-estimates}
+\end{table*}
+
+\subsubsection{Methodology}
+The programs for determining are identical except for where the timing begins and ends. The programs 
+request a socket, connect to the socket, and then close the socket. For measuring connection time we
+begin timing before the request for a socket and end after a connection.  For measuring teardown time
+ we begin timing after the connection is established and after the connection is closed. The 
+ procedure is repeated for 1000 iterations and the median value is reported as the result.
+
+ On the remote end we utilize the ncat program to setup a simple server that binds to port 2000 and listens for incoming connections with the following command:
+ \begin{verbatim}
+ ncat -l 2000 --keep-open
+ \end{verbatim}
+\subsubsection{Results}
+Due to our timing methodology, both programs report results in terms of elapsed cycles. We convert this to milliseconds by dividing by the clock frequency reported in the machine description of this report.
+The results are show in table~\ref{table:connection-results}.
+
+\begin{table*}[b]
+\begin{tabular}{|c|c|c|c|}
+\hline
+Setup Local(ms) & Setup Remote (ms) & Teardown Local (ms) & Teardown Remote (ms)\\ \hline
+0.149            & 0.983          & 0.315            & 0.014         \\ \hline
+\end{tabular}
+\caption{Experimental results for TCP connection setup and teardown overhead}
+\label{table:connection-results}
+\end{table*}
+
+\subsubsection{Analysis and Discussion}
+In general, we overestimated the overhead of both setup and teardown. An interesting result is 
+that the teardown time is much longer in the local case than in the remote case. We assumed that a 
+call to close() would send the packets required for the 4-way termination handshake. When we looked 
+into this further we learned that close() deallocates the socket file descriptor and any file 
+descriptors associated with pipes or FIFO. The local case taking much longer to close may be due to 
+additional pipes that facilitate the connection to the ncat server running in another process.
+This also explains why our initial estimate that teardown time would exceed setup time is invalid.
+The additional time to setup a TCP connection in the local case is likely due to the extra overhead 
+of inter process communication with the ncat server.
 

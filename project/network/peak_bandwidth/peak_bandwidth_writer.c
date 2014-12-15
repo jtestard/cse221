@@ -71,13 +71,14 @@ int inline GetElapsedTime(uint64_t *times) {
    /**************************************************
     * Initialize structs for a TCP connection
     **************************************************/
+    int buff_size = BUFSIZE;
     int bytes_sent, sock_fd, status, len;
     struct addrinfo remote;
     struct sockaddr_in remote_addr;
     struct in_addr raddr;
-    char msg[BUFSIZE];
+    char msg[MSGSIZE];
 
-    for (i = 0; i < BUFSIZE; i++)
+    for (i = 0; i < MSGSIZE; i++)
         msg[i] = 'A';
 
     len = strlen(msg);
@@ -120,6 +121,9 @@ int inline GetElapsedTime(uint64_t *times) {
             perror("[!] client: socket");
             return 1;
         }
+
+        setsockopt(sock_fd, SOL_SOCKET, SO_SNDBUF, &buff_size, (int)sizeof(buff_size));
+
 
         if (connect(sock_fd, (struct sockaddr *) &remote_addr, sizeof remote_addr) == -1) {
             close(sock_fd);

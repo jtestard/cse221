@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <signal.h>
 
-#define ITERATIONS 1
+#define ITERATIONS 100
 #define STACK_SIZE (1024 * 1024)
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE);} while (0)
@@ -117,9 +117,10 @@ int main( int argc, const char* argv[] ){
 	for (j = 0 ; j < 8 ; j++) {
         GetElapsedTime(iterations, j);
         for (i = 0; i < iterations; i++) {
-            average_time += times[i];
+            if (i != 0)
+				average_time += times[i];
         }
-        average_time /= iterations;
+        average_time /= iterations - 1;
         printf("%i %lu\n", j , average_time);
 	}
     return 0;

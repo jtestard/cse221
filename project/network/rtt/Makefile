@@ -1,7 +1,7 @@
 ITERATIONS=1000
-#RADDR="192.168.1.74"
-RADDR="127.0.0.1"
-RPORT="2000"
+RADDR="192.168.1.74"
+#RADDR="127.0.0.1"
+RPORT="7"
 
 # Default Ping Packet data size is 56
 # We also want our data size to match in order to 
