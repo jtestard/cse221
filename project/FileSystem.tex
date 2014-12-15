@@ -2,11 +2,45 @@
 
 \subsubsection{Estimation}
 
+Linux uses all available memory as a file cache, therefore the minimum size
+file cache is 0MB if applications and kernel are using the entire memory. With this information we estimate that the maximum size file cache is the 
+total size of memory minus the size of the linux kernel. To estimate the size of memory occupied by the kernel we clear the file cache by executing 
+the following command:
+\begin{verbatim}
+echo 3 > /proc/sys/vm/drop_caches
+\end{verbatim}
+and then running the free program to report memory usage statistics. This shows that 4GB out of 8GB in memory are available to be used as a file cache.
+
 \subsubsection{Methodology}
+
+We implement a program that reads files of varying sizes and reports the read bandwith. For smaller file
+sizes we expect the bandwidth to be high. Once the size of the file exceeds the size of the file cache,
+we expect to see a drop in read performance. The file size at which read bandwidth drops should 
+correspond with the file cache size.
+
+The program obtains a file descriptor to the raw disk in read only mode with the file cache enabled. 
+We read from the file descriptor one MB at a time until the desired file size is reached and at that 
+point the lseek64() system call is invoked to return the read pointer to the beginning of disk. The process of reading from beginning of disk to the current file size repeats until a timeout signal is asserted.
+We begin timing before the first call to read and end timing after a set period of time. We determined 
+empirically that 5 seconds is sufficient to perform enough repititions of entire file reads for all 
+file sizes tested.
 
 \subsubsection{Results}
 
+Our results are presented in figure~\ref{figure:cacheresult}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{cache-results.pdf}
+    \caption{Experimental results for file cache size}
+    \label{figure:cacheresult}
+\end{figure}
+
 \subsubsection{Analysis}
+
+The results of our experiment show that for file read bandwidth exceeds the rated maximum bandwidth of the SSD (500MB/s) for file sizes greater than 4GB. This indicates that no file reads are cached because 
+the file size is at least twice as large as the cache. According to our results we have over estimated the size of our file cache. The true size of the file cache appears to be between 512MB and 2GB where we 
+see a corresponding decrease in the read bandwidth. 
 
 \subsection{File Read Time}
 
@@ -40,11 +74,41 @@ To obtain the block size, we used the command : blockdev --getbsz /dev/sda1. We 
 
 \subsubsection{Estimation}
 
+Our experiments used an exported file shared from an NFS version 3 server. NFS
+version 3 uses TCP by default for data transport.  We estimate that the file
+read bandwidth over NFS will be limited by the maximum throughput of the TCP
+protocol. We will use the result from our peak bandwidth experiment to estimate 
+that the file read bandwidth over NFS will be 16Mbps.
+
 \subsubsection{Methodology}
+
+We configure an NFS server on the same remote machine that was used in the Network bencmarking experiments and share a directory containing a 5GB file. The nfs share is mounted on our local machine and a 
+modified version of the random access bandwidth experiment is performed. We modify the program for measuring the read bandwidth of random accesses so that O_DIRECT flag is not used. This was required because 
+it is not supported for reading NFS shares. Random access was chosen over sequential reads in order to limit the effect of the file cache upon our results.
 
 \subsubsection{Results}
 
+Our program outputs the results in MB per second as show in figure~\ref{figure:nsfresult}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{nfsresults.pdf}
+    \caption{log-log plot of experimental results for NFS read bandwidth}
+    \label{figure:nfsresult}
+\end{figure}
+
 \subsubsection{Analysis}
+
+The results show that read bandwidth is greater than our estimate for small
+file sizes. This is due to data being accessed from the file cache.  The
+experiment is run over the same period of time for each file size, therefore
+smaller file sizes will have more opportunities for cache hits with random
+access reads than larger file sizes because the overall working set is smaller.
+The data shows that as file size increases, the read bandwidth approaches our
+estimate that was based upon our previous experimental result of peak bandwidth
+over TCP. The minimum read bandwidth is 2.7MB/s which is slightly better than
+the peak bandwidth of TCP this is the expected result since the file cache was
+not disabled due to reading files over NFS.
 
 \subsection{Contention}
 
