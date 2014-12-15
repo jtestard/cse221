@@ -81,12 +81,6 @@ void inline GetElapsedTime(uint64_t *times) {
     for (i = 0; i < ITERATIONS; i++) {
 
     
-        asm volatile (
-                     "CPUID\n\t"
-                     "RDTSC\n\t"
-                     "mov %%edx, %0\n\t"
-                     "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
-                     );
 
         /*********************************************
          * Code to be benchmarked goes here
@@ -97,7 +91,13 @@ void inline GetElapsedTime(uint64_t *times) {
             exit(EXIT_FAILURE);
         } else if (pid > 0) {
     //        close(pipefd[1]);
-            read(pipefd[0], &buff, 1);
+         asm volatile (
+                     "CPUID\n\t"
+                     "RDTSC\n\t"
+                     "mov %%edx, %0\n\t"
+                     "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::"%rax", "%rbx", "%rcx", "%rdx"
+                     );
+           read(pipefd[0], &buff, 1);
        //     close(pipefd[0]);
         } else {
      //       close(pipefd[0]);
