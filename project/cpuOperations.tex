@@ -1,5 +1,24 @@
 \subsection{Measurement Overhead}
 
+\subsubsection{Estimation}
+
+We estimate that the hardware overhead of reading the time-stamp registers and
+calculating the elapsed time is 2 cycles. Since the time-stamp is implemented in
+registers it would require 1 cycle to read the current time. 
+
+We implemented the reading of the start and end time with inline assembly. The
+code to read the start time and the code to read the end time each consists of
+four assembly instructions. This includes the calls to CPUID which act as a
+fence to force sequential execution of code.  Since the time-stamp register is
+64-bits we retrieve the upper and lower 32-bits into two separate registers. We
+reform the original 64-bit value by using a shift and bitwise or
+operation.Finally,  The two 64-bit values are subtracted to produce the final
+elapsed time in cycles. We estimate the software overhead to be 15 cycles.
+
+The total overhead of our measuring mechanism is estimated to be 17 cycles.
+
+\subsubsection{Methodology}
+
 In order to accurately measure execution time we implemented a timing
 methodology that reads the hardware time-stamp counter before and after a
 procedure (by procedure here we mean lines of C or assembly code we wish to
@@ -21,29 +40,18 @@ use the median execution time over all iterations as the final result in order
 to reduce the influence that extreme values caused by context switches,
 interrupts and other exceptional events have on our experiment. 
 
-\subsubsection{Measuring time overhead} 
-
-We estimate that the hardware overhead of reading the time-stamp registers and
-calculating the elapsed time is 2 cycles. Since the time-stamp is implemented in
-registers it would require 1 cycle to read the current time. 
-
-We implemented the reading of the start and end time with inline assembly. The
-code to read the start time and the code to read the end time each consists of
-four assembly instructions. This includes the calls to CPUID which act as a
-fence to force sequential execution of code.  Since the time-stamp register is
-64-bits we retrieve the upper and lower 32-bits into two separate registers. We
-reform the original 64-bit value by using a shift and bitwise or
-operation.Finally,  The two 64-bit values are subtracted to produce the final
-elapsed time in cycles. We estimate the software overhead to be 15 cycles.
-
-The total overhead of our measuring mechanism is estimated to be 17 cycles.
-
 In order to gain the most accurate measure of the timing overhead we disabled
 additional cores and frequency scaling within the bios.
 
+\subsubsection{Results} 
+
 For computing the overhead of reading time, we ran the timing harness that was
 previously described without any intervening code.  Our results show that the
-overhead of reading time to be 40 cycles. 
+overhead of reading time to be 40 cycles. We can convert cycles to elapsed time 
+in seconds by the following equation:
+$$\frac{40\text{cycles}}{2.45GHz} = 16.3ns$$
+
+\subsubsection{Analysis}
 
 Our results show that we underestimated the overhead of our timing mechanism. We
 believe this is due to our assumption that the instructions CPUID and RDTSCP,
@@ -52,7 +60,17 @@ able to verify this by removing the CPUID calls and replacing RDTSCP with RDTSC.
 The experiment without the serializing instructions showed that the overhead of
 the timing mechanism was 22 cycles which is closer to our estimated result.
 
-\subsubsection{Measuring loop overhead}
+\subsection{Measuring loop overhead}
+
+\subsubsection{Estimation}
+
+We estimate that a loop would not add any hardware
+overhead. In terms of software overhead, we estimate that 5 additional cycles
+will be required for each iteration of the loop. This number was arrived at by
+examining the assembly code that implements the loop and assuming that each
+instruction executes in a single cycle.
+
+\subsubsection{Methodology}
 
 For the looping overhead,  we have to be careful that our looping procedure does
 not get optimized out either by the compiler or the assembly interpreter. For
@@ -62,17 +80,17 @@ disable compiler optimizations by using the "-o0" flag and implemented our
 procedure under test using inline assembly.
 
 The procedure under test is a loop, written in 5 lines of assembly code, that
-runs for 10 iterations.  We estimate that a loop would not add any hardware
-overhead. In terms of software overhead, we estimate that 5 additional cycles
-will be required for each iteration of the loop. This number was arrived at by
-examining the assembly code that implements the loop and assuming that each
-instruction executes in a single cycle.
+runs for 10 iterations.
 
-Our results show that our estimate of the loop overhead was very close to the
-measured loop overhead of 4 cycles. The discrepency is the result of counting an
-instruction that initializes the number of loops to perform by moving a
-parameter into a register. This instruction does not participate in the actual
-loop.
+\subsubsection{Results}
+
+The measured loop overhead was 4 cycles which is equal to 1.6ns.
+
+\subsubsection{Analysis}
+
+The discrepency is between our estimate and the result is due to the counting
+an instruction that initializes the number of loops to perform . This
+instruction does not participate in the actual loop.
 
 An interesting result that we discovered is that after several iterations of the
 timing procedure (i.e. timing and loop of ten iterations) the loop overhead is
@@ -248,6 +266,11 @@ The results seem to match our expectations : when compared to regular processes,
 
 \subsection{Context Switch Time} 
 
+\subsubsection{Estimation}
+
+
+\subsubsection{Methodology}
+
 In order to measure the time taken for a context switch to occur, we implemented
 a methodology using pipes to deterministically context switch between a parent
 process or thread to its child and then back. Once a process is forked or a new
@@ -270,7 +293,7 @@ that performs 10,000 iterations. The elapsed time for a context switch is stored
 on each iteration and the median of all results is output as the final result in
 order to minimize the spurious results.
 
-\subsubsection{Process Context Switch} 
+\subsubsubsection{Process Context Switch} 
 We use the fork system call in order to create the child process which will
 write to the pipe. We had a difficult time coming up with an estimate for the
 time to perform a context switch. Since context switches in Linux are primarily
@@ -278,19 +301,24 @@ performed in software we believe the time should be proportional to the latency
 in pushing all processor registers that must be saved to the kernel stack plus
 the cost of installing a new address space for the process that is going to be
 scheduled.
-
-Our experimental results show that the median time to perform a process context
-switch is 180,566 cycles which is approximately equal to 72 micro seconds on the
-2.5GHz test machine. 
-
-\subsubsection{Thread Context Switch}
+\subsubsubsection{Thread Context Switch}
 We use the clone system call with the CLONE\_VM flag set in order to create a
 thread which shares resources with the parent process. We faced the same
 difficulty in estimating the time of context switching between threads, but we
 can state with confidence that it should be at least an order of magnitude less
 that the time taken to perform a context switch between processes because the
 address space is shared.
+\subsubsection{Result}
+
+Our experimental results show that the median time to perform a process context
+switch is 180,566 cycles which is approximately equal to 72 micro seconds on the
+2.5GHz test machine. 
+
 
 Our experimental results show that the median time to perform a thread context
 switch is 38,566 cycles which is approximately equal to 15 micro seconds on the
 2.5GHz test machine.
+
+\subsubsection{Analysis}
+
+
